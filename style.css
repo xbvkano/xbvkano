@@ -219,3 +219,18 @@ a{
     text-decoration: underline;
 }
 
+#NeabyPhoto{
+    height: 70%;
+}
+
+#NearByText{
+    top: -12px;
+}
+
+#FES{
+    height: 80%;
+}
+
+#FESText{
+    top: 50px;
+}
