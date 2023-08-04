@@ -15,9 +15,6 @@ body{
 }
 
 .NavigatorBanner{
-    position: fixed;
-    top: 0;
-    z-index: 5;
     background: #1a1a1a;
     width: 100%;
     padding: 10px 0;
@@ -25,6 +22,7 @@ body{
     display: flex;
     align-items: center;
     justify-content: space-between;
+    position: relative;
     color: white;
 }
 
@@ -63,11 +61,11 @@ body{
 
 .Welcome{
     position: relative;
-    font-size: 40vh;
+    font-size: 17vw;
     text-align: left;
-    width: 230px;
-    left: 30px
-    
+    width: 90%;
+    height: 100%;
+    left: 30px;
 }
 
 .WelcomingParagraph{
