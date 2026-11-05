@@ -436,10 +436,14 @@ export function RecordTable({
   rows,
   onEdit,
   onDelete,
+  onMove,
+  moving,
 }: {
   rows: { id: number; primary: string; secondary: string }[];
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
+  onMove?: (id: number, direction: "up" | "down") => void;
+  moving?: boolean;
 }) {
   if (rows.length === 0) {
     return <p>No records yet.</p>;
@@ -453,7 +457,7 @@ export function RecordTable({
         </tr>
       </thead>
       <tbody>
-        {rows.map((row) => (
+        {rows.map((row, index) => (
           <tr key={row.id}>
             <td>
               <div>{row.primary}</div>
@@ -461,10 +465,32 @@ export function RecordTable({
             </td>
             <td>
               <div className="row-actions">
-                <button className="button" type="button" onClick={() => onEdit(row.id)}>
+                {onMove ? (
+                  <button
+                    className="button"
+                    type="button"
+                    aria-label={`Move ${row.primary} up`}
+                    disabled={moving || index === 0}
+                    onClick={() => onMove(row.id, "up")}
+                  >
+                    ↑
+                  </button>
+                ) : null}
+                {onMove ? (
+                  <button
+                    className="button"
+                    type="button"
+                    aria-label={`Move ${row.primary} down`}
+                    disabled={moving || index === rows.length - 1}
+                    onClick={() => onMove(row.id, "down")}
+                  >
+                    ↓
+                  </button>
+                ) : null}
+                <button className="button" type="button" onClick={() => onEdit(row.id)} disabled={moving}>
                   Edit
                 </button>
-                <button className="button" type="button" onClick={() => onDelete(row.id)}>
+                <button className="button" type="button" onClick={() => onDelete(row.id)} disabled={moving}>
                   Delete
                 </button>
               </div>

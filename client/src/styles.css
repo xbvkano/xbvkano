@@ -265,10 +265,21 @@ li + li {
 }
 
 .row-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: repeat(2, 4.75rem);
+  gap: 0.4rem;
+  justify-content: end;
+}
+
+.row-actions .button {
+  width: 100%;
+  min-height: 2.1rem;
+  padding: 0.35rem 0.25rem;
+  text-align: center;
+}
+
+.row-actions .button:disabled {
+  opacity: 0.4;
 }
 
 .modal-backdrop {

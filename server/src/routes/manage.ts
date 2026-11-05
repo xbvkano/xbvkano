@@ -13,6 +13,7 @@ import {
   loadApplications,
   loadPortfolio,
   parseId,
+  moveEntry,
   updateApplication,
   updateEntry,
   updateProfile,
@@ -44,6 +45,14 @@ manageRouter.post(
   "/entries",
   asyncHandler(async (req, res) => {
     res.status(201).json(await createEntry(req.body));
+  }),
+);
+
+manageRouter.post(
+  "/entries/:id/move",
+  asyncHandler(async (req, res) => {
+    await moveEntry(parseId(req.params.id), req.body);
+    res.status(204).end();
   }),
 );
 

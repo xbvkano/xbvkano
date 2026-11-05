@@ -119,6 +119,10 @@ export function deleteEntry(id: number) {
   return send<void>(`/api/external/entries/${id}`, "DELETE");
 }
 
+export function moveEntry(id: number, direction: "up" | "down") {
+  return send<void>(`/api/external/entries/${id}/move`, "POST", { direction });
+}
+
 export function createSkill(skill: Omit<Skill, "id">) {
   return send<Skill>("/api/external/skills", "POST", skill);
 }

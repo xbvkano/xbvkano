@@ -19,6 +19,7 @@ import {
   deleteEntry,
   deleteReference,
   deleteSkill,
+  moveEntry,
   type EntryKind,
   type JobApplication,
   type ManagedEntry,
@@ -207,6 +208,8 @@ export function EntryPage({ kind }: { kind: EntryKind }) {
   const { portfolio, reload } = usePortfolio();
   const section = entryKinds.find((item) => item.kind === kind);
   const [editor, setEditor] = useState<ManagedEntry | null | undefined>(undefined);
+  const [moving, setMoving] = useState(false);
+  const [moveError, setMoveError] = useState("");
   const removal = useDelete("entry");
   if (!section) {
     return null;
@@ -242,7 +245,19 @@ export function EntryPage({ kind }: { kind: EntryKind }) {
             removal.ask(entry.id, entry.title);
           }
         }}
+        moving={moving}
+        onMove={(id, direction) => {
+          setMoving(true);
+          setMoveError("");
+          void moveEntry(id, direction)
+            .then(() => reload())
+            .catch((error: unknown) => {
+              setMoveError(error instanceof Error ? error.message : "Could not reorder");
+            })
+            .finally(() => setMoving(false));
+        }}
       />
+      {moveError ? <p className="form-error">{moveError}</p> : null}
       {editor !== undefined ? (
         <EntryEditor
           kind={kind}

@@ -349,6 +349,32 @@ export async function deleteEntry(id: number) {
   await prisma.entry.delete({ where: { id } });
 }
 
+export async function moveEntry(id: number, body: unknown) {
+  const direction = asRecord(body).direction;
+  if (direction !== "up" && direction !== "down") {
+    throw new ApiError(400, "Direction must be up or down");
+  }
+  const entry = await entryById(id);
+  const siblings = await prisma.entry.findMany({
+    where: { kind: entry.kind },
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+  });
+  const index = siblings.findIndex((item) => item.id === id);
+  const target = direction === "up" ? index - 1 : index + 1;
+  if (target < 0 || target >= siblings.length) {
+    return;
+  }
+  const next = siblings.slice();
+  const [moved] = next.splice(index, 1);
+  if (!moved) {
+    return;
+  }
+  next.splice(target, 0, moved);
+  await prisma.$transaction(
+    next.map((row, order) => prisma.entry.update({ where: { id: row.id }, data: { sortOrder: order } })),
+  );
+}
+
 function skillInput(body: unknown) {
   const record = asRecord(body);
   return {
