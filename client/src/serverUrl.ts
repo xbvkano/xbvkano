@@ -11,5 +11,12 @@ export function mediaUrl(path: string): string {
   if (path.startsWith("/media/") || path === "/media") {
     return serverUrl(path);
   }
+  if (/^https?:\/\//.test(path)) {
+    return path;
+  }
+  const base = import.meta.env.BASE_URL;
+  if (base !== "/" && path.startsWith("/")) {
+    return `${base.replace(/\/$/, "")}${path}`;
+  }
   return path;
 }

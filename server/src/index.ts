@@ -22,6 +22,8 @@ const clientOrigins = (process.env.CLIENT_ORIGIN ?? "http://localhost:5173")
   .map((origin) => origin.trim())
   .filter((origin) => origin.length > 0);
 
+const crossSiteSession = process.env.SESSION_CROSS_SITE === "true";
+
 const app = express();
 app.set("trust proxy", 1);
 
@@ -49,8 +51,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false,
+      sameSite: crossSiteSession ? "none" : "lax",
+      secure: crossSiteSession,
     },
   }),
 );

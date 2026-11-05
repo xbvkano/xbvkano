@@ -1,0 +1,71 @@
+name: Deploy client
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure GitHub Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: npm install
+
+      - name: Build client
+        env:
+          VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
+          VITE_LOGIN_CIPHER_SECRET: ${{ secrets.VITE_LOGIN_CIPHER_SECRET }}
+          VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: |
+          if [ -z "$VITE_SERVER_URL" ]; then
+            echo "Add a VITE_SERVER_URL Actions secret set to the API origin, such as https://api.example.com"
+            exit 1
+          fi
+          if [ -z "$VITE_LOGIN_CIPHER_SECRET" ]; then
+            echo "Add a VITE_LOGIN_CIPHER_SECRET Actions secret that matches LOGIN_CIPHER_SECRET on the server"
+            exit 1
+          fi
+          npm run build --workspace=client
+
+      - name: Add the Pages SPA fallback
+        run: |
+          cp client/dist/index.html client/dist/404.html
+          touch client/dist/.nojekyll
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: client/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

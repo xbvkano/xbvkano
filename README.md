@@ -18,6 +18,15 @@ From `server`, `npx prisma migrate dev` and `npx prisma db seed` use `server/.en
 
 `npm run dev` starts both. The client sends API and uploaded-image requests to `VITE_SERVER_URL` in `client/.env`. That value is the server root, with no path on the end, such as `http://localhost:3001` or your deployed API origin. `CLIENT_ORIGIN` in `server/.env` is the browser origin allowed to call that API with the login cookie, such as `http://localhost:5173`. Separate several origins with commas. Restart both processes after changing either value. The Vite proxy for `/api` and `/media` remains only for a client built without `VITE_SERVER_URL`.
 
+## GitHub Pages
+
+`.github/workflows/pages.yml` builds the client and publishes it. The API and database stay on your host. In the repository settings, set Pages to deploy from GitHub Actions, then add these Actions secrets:
+
+- `VITE_SERVER_URL`: the API origin, with no path, such as `https://api.example.com`
+- `VITE_LOGIN_CIPHER_SECRET`: the same value as `LOGIN_CIPHER_SECRET` on the server
+
+On the server, add the Pages origin to `CLIENT_ORIGIN`. For this repository that origin is `https://xbvkano.github.io`, with no `/xbvkano` path. Set `SESSION_CROSS_SITE=true` so the dashboard login cookie is sent from that site. The API has to be served over HTTPS for that cookie. Pushing to `main` runs the workflow.
+
 ## External API
 
 An outside assistant reads and updates portfolio data at `/api/external`. Send `Authorization: Bearer <token>`, or call the same routes from the logged-in dashboard, which uses the session cookie. Create the token on the dashboard. It lasts 8 hours, and creating another one revokes the previous token.
