@@ -159,9 +159,9 @@ export function TokenPage() {
         <div>
           <h1>API token</h1>
           <p className="page-description">
-            Set a daily window, such as 3:00 AM to 8:00 AM. During that window an assistant can read the portfolio
-            and update job applications without a token. Schedule the job inside the window. Outside it, the token is
-            required. The token lasts 8 hours and is shown once.
+            Choose the daily hours below. During those hours an assistant can read the portfolio and update job
+            applications without a token. Outside those hours, the token is required. The token lasts 8 hours and is
+            shown once.
           </p>
         </div>
       </div>
@@ -186,19 +186,34 @@ export function TokenPage() {
       ) : null}
 
       <section className="token-section">
-        <h2>Open hours</h2>
+        <h2>Choose the hours</h2>
+        <p>
+          Pick any start and end. Saving replaces the previous window, and the assistant instructions use the times you
+          save.
+        </p>
+        {openHourQuery.status === "loading" && !hour ? <p>Loading the saved window...</p> : null}
+        {openHourQuery.status === "error" && !hour ? (
+          <p>Could not load the saved window. {openHourQuery.message}</p>
+        ) : null}
         {hour?.enabled && hour.open ? (
           <p>
-            Open now, until {hour.endsAt} {hour.timeZone}. An assistant can apply without a token.
+            Open now. Saved window: {hour.startsAt} to {hour.endsAt} {hour.timeZone}.
           </p>
         ) : null}
         {hour?.enabled && !hour.open ? (
           <p>
-            Closed. The daily window is {hour.startsAt} to {hour.endsAt} {hour.timeZone}. Schedule the job inside that
-            window.
+            Closed right now. Saved window: {hour.startsAt} to {hour.endsAt} {hour.timeZone}.
           </p>
         ) : null}
         {hour && !hour.enabled ? <p>The daily window is off. An assistant needs a valid token.</p> : null}
+        {form &&
+        hour &&
+        (form.startsAt !== hour.startsAt ||
+          form.endsAt !== hour.endsAt ||
+          form.timeZone.trim() !== hour.timeZone ||
+          form.enabled !== hour.enabled) ? (
+          <p>These hours are not saved yet.</p>
+        ) : null}
         {form ? (
           <div className="schedule-fields">
             <label className="field">
