@@ -89,6 +89,19 @@ model Media {
   bytes    Bytes
 }
 
+model OpenHour {
+  id        Int       @id
+  openUntil DateTime?
+}
+
+model AssistantNote {
+  id        Int      @id @default(autoincrement())
+  topic     String   @unique
+  question  String
+  answer    String
+  updatedAt DateTime @updatedAt
+}
+
 model ApiToken {
   id        Int       @id @default(autoincrement())
   tokenHash String    @unique

@@ -473,3 +473,23 @@ export async function deleteApplication(id: number) {
   }
   await prisma.jobApplication.delete({ where: { id } });
 }
+
+export async function upsertApplication(body: unknown) {
+  const input = applicationInput(body);
+  const existing = await prisma.jobApplication.findFirst({
+    where: { companyName: { equals: input.companyName, mode: "insensitive" } },
+    orderBy: [{ appliedOn: "desc" }, { id: "desc" }],
+  });
+  if (!existing) {
+    return {
+      created: true,
+      application: formatApplication(await prisma.jobApplication.create({ data: input })),
+    };
+  }
+  return {
+    created: false,
+    application: formatApplication(
+      await prisma.jobApplication.update({ where: { id: existing.id }, data: input }),
+    ),
+  };
+}

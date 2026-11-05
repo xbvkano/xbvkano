@@ -82,6 +82,31 @@ export function getTokenStatus() {
   return getJson<TokenStatus>("/api/auth/tokens/current");
 }
 
+export type OpenHourStatus = {
+  open: boolean;
+  openUntil: string | null;
+};
+
+export function getOpenHour() {
+  return getJson<OpenHourStatus>("/api/auth/tokens/open-hour");
+}
+
+export function startOpenHour() {
+  return sendJson<OpenHourStatus>("/api/auth/tokens/open-hour", "POST");
+}
+
+export function closeOpenHour() {
+  return sendJson<OpenHourStatus>("/api/auth/tokens/open-hour", "DELETE");
+}
+
+async function sendJson<T>(path: string, method: string): Promise<T> {
+  const response = await fetch(serverUrl(path), { method, credentials: "include" });
+  if (!response.ok) {
+    throw new Error("Request failed");
+  }
+  return response.json() as Promise<T>;
+}
+
 export async function createApiToken(): Promise<{ token: string; expiresAt: string }> {
   const response = await fetch(serverUrl("/api/auth/tokens"), {
     method: "POST",

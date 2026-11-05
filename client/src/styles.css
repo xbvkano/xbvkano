@@ -118,6 +118,28 @@ li + li {
   font-family: ui-monospace, monospace;
 }
 
+.token-section {
+  margin-top: 1.75rem;
+}
+
+.token-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.instruction-box {
+  margin: 0.75rem 0 0;
+  padding: 0.9rem 1rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  background: #f6f4ef;
+  border: 1px solid #e4e0d8;
+  border-radius: 0.6rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.86rem;
+}
+
 .dashboard-shell {
   min-height: 100vh;
   display: flex;

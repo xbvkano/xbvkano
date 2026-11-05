@@ -1,5 +1,9 @@
 const serverRoot = (import.meta.env.VITE_SERVER_URL ?? "").replace(/\/$/, "");
 
+export function serverOrigin(): string {
+  return serverRoot;
+}
+
 export function serverUrl(path: string): string {
   if (!serverRoot || /^https?:\/\//.test(path)) {
     return path;
