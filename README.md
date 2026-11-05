@@ -20,7 +20,7 @@ From `server`, `npx prisma migrate dev` and `npx prisma db seed` use `server/.en
 
 ## GitHub Pages
 
-`.github/workflows/pages.yml` builds the client and publishes it. The API and database stay on your host. In the repository settings, set Pages to deploy from GitHub Actions, then add these Actions secrets:
+`.github/workflows/pages.yml` builds the client and publishes it. The API and database stay on your host. In the repository settings, set Pages to deploy from GitHub Actions. Both jobs use the `github-pages` environment, so add these secrets on that environment:
 
 - `VITE_SERVER_URL`: the API origin, with no path, such as `https://api.example.com`
 - `VITE_LOGIN_CIPHER_SECRET`: the same value as `LOGIN_CIPHER_SECRET` on the server
