@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EntryKind {
+  project
+  certificate
+  experience
+  education
+  coursework
+}
+
+model Profile {
+  id         Int       @id
+  firstName  String
+  lastName   String
+  phone      String?
+  email      String?
+  birthDate  DateTime? @db.Date
+  sex        String?
+  languages  String[]
+  notes      String    @default("")
+  photoPath  String
+}
+
+model Entry {
+  id               Int          @id @default(autoincrement())
+  kind             EntryKind
+  slug             String       @unique
+  title            String
+  subtitle         String?
+  shortDescription String
+  longDescription  String
+  imagePath        String?
+  linkUrl          String?
+  startedOn        DateTime?    @db.Date
+  endedOn          DateTime?    @db.Date
+  sortOrder        Int
+  skills           EntrySkill[]
+}
+
+model Skill {
+  id               Int          @id @default(autoincrement())
+  name             String
+  shortDescription String
+  longDescription  String
+  entries          EntrySkill[]
+}
+
+model EntrySkill {
+  entryId Int
+  skillId Int
+  entry   Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  skill   Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([entryId, skillId])
+}
+
+model Reference {
+  id               Int    @id @default(autoincrement())
+  firstName        String
+  lastName         String
+  email            String
+  shortDescription String
+}
+
+enum ApplicationStatus {
+  applied
+  declined
+  rejected
+  hired
+}
+
+model JobApplication {
+  id          Int               @id @default(autoincrement())
+  companyName String
+  appliedOn   DateTime          @db.Date
+  status      ApplicationStatus @default(applied)
+}
+
+model ApiToken {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+}

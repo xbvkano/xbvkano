@@ -1,20 +1,45 @@
-### Hi there 👋
+# xbvkano
 
-<!--
-**xbvkano/xbvkano** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+TypeScript portfolio. The React client is a responsive shell. Profile, project, and certification copy is seeded from `archive/content`. The original pages and images stay in `archive/`. Files for later showcase pages live in `client/public/showcase`.
 
-Here are some ideas to get you started:
+## Setup
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+```bash
+npm install
+npm run db:migrate -w server
+npm run db:seed -w server
+npm run dev
+```
 
-- I am working on the FES project for my internship at DRIVEN NeuroRecovery Center; I am creating a simulator for their Functional Electrical Stimulation. It has been going great! I recently got a certificate from code academy in Phaser.js Framework, which I will use in this project. I have been learning so much, from CSS, HTML, and JavaScript to working with Blender to create the animations for the program.
+From `server`, `npx prisma migrate dev` and `npx prisma db seed` use `server/.env`.
 
-- Fun Facts: I am originally from Brazil! Born in Sao Paulo, lived in Rio de Janeiro for a while, and then moved to the United States when I was about to turn 12 years old. I graduated high school with 75 college credits, an associate's degree from the College of Southern Nevada with a Physical Science degree, and a scholarship to complete my bachelor's in Computer Science and Mathematics, which I am working on right now at the University of Nevada, Las Vegas. Also! I was born on March 14, 2005, π day!
+- Client: http://localhost:5173
+- API: http://localhost:3001
+
+`npm run dev` starts both. The client proxies `/api` and `/media` to the API.
+
+## External API
+
+An outside assistant reads and updates portfolio data at `/api/external`. Send `Authorization: Bearer <token>`, or call the same routes from the logged-in dashboard, which uses the session cookie. Create the token on the dashboard. It lasts 8 hours, and creating another one revokes the previous token.
+
+`GET /api/external/portfolio` returns:
+
+- `profile`, including `age` calculated from `birthDate`
+- `entries`, grouped by `project`, `certificate`, `experience`, `education`, and `coursework`. Each entry includes its skills
+- `skills`
+- `references`
+
+Dates are `YYYY-MM-DD`. A missing `endedOn` on an experience entry means the role is current.
+
+Writes use the same prefix:
+
+- `PATCH /profile`
+- `POST /entries`, `PATCH /entries/:id`, `DELETE /entries/:id`
+- `POST /skills`, `PATCH /skills/:id`, `DELETE /skills/:id`
+- `POST /references`, `PATCH /references/:id`, `DELETE /references/:id`
+- `GET /applications`, `POST /applications`, `PATCH /applications/:id`, `DELETE /applications/:id`
+- `POST /media` with one multipart field named `file` (`png`, `jpeg`, `webp`, or `gif`, up to 5 MB). The response `imagePath` is served from `/media`.
+
+A job application has `companyName`, `appliedOn`, and `status`: `applied`, `declined`, `rejected`, or `hired`. `GET /api/external/ping` still checks that a token is valid.
+
+Database settings live in `server/.env`. Copy `server/.env.example` there if you do not already have one. The active `DATABASE_URL` uses the local Postgres database `mydb`, in a `xbvkano` schema so it stays separate from other apps in that database. Comment that line and uncomment the one below it to point at another database.

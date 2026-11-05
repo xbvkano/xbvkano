@@ -1,0 +1,32 @@
+{
+  "name": "xbvkano",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c blue,green \"npm run dev -w server\" \"npm run dev -w client\"",
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "db:migrate": "npm run db:migrate -w server",
+    "db:seed": "npm run db:seed -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "prisma": "^6.19.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "dotenv": "^17.2.3"
+  },
+  "allowScripts": {
+    "prisma@6.19.3": true,
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.2": true
+  }
+}

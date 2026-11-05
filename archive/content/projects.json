@@ -1,0 +1,33 @@
+[
+  {
+    "slug": "lead-detection",
+    "title": "Image Recognition Lead Detection Program",
+    "body": "In this project, I solved a tough time for the business. I noticed that many leads were coming when no one would be available to answer. That was causing us to lose the chance to get those crucial clients looking for services we had already filtered in the Nearby jobs settings.\n\nAt the time, my only programing language was Python, and with some knowledge from previous “for fun projects,” I knew how to work with the PyAutoGUI library. To create this project, I had to learn image recognition; I set up a constant loop to check the screen for the \"See Job\" button. If found, I would run a macro that would perform clicks on the screen to send a message to the client. Even if my team took hours to respond to the client, we would still be able to get the job since as long as we send an initial message, we are counted in as one of the six exclusive companies allowed to message the client. To be one of the six, you only need to message the client first.\n\nSince it was created, this program has assured us that we would get the lead and close a job with the client. I can ensure a minimum of 40% of our clients today were initiated by this program.",
+    "imagePath": "/showcase/projects/lead-detection.png",
+    "linkUrl": "https://pyautogui.readthedocs.io/en/latest/",
+    "linkLabel": "PyAutoGUI",
+    "createdLabel": "Feb 2023",
+    "sortOrder": 0
+  },
+  {
+    "slug": "fes-simulator",
+    "originalHeading": "Image Recognition Lead Detection Program",
+    "title": "Functional Electrical Stimulation Simulator",
+    "body": "The Functional Electrical Stimulation is a machine that we use daily at DRIVEN NeuroRecovery Center. The machine controls electrical stimulations to specific muscles in a timed manner to assist in movements. The specific one that I chose to simulate is for an electric bike; after the client is entirely set up, even those without any leg movement can perform the movement to use a bike, much like those you can find at the gym.\n\nDuring my internship, I noticed that getting used to the interface, muscles, and movements that they would perform took a while. To assist with that, I came up with the idea of creating an online simulator the company will use to train newly hired employees and interns. This project allowed me to push myself beyond CSS, HTML, and JavaScript, along with a start on Blender to create the animations. Please excuse the old tech looks, I kept the designed as close as possible to the original.\n\nThe program can be accessed: https://xbvkano.github.io/FES/",
+    "imagePath": "/showcase/projects/fes.png",
+    "linkUrl": "https://xbvkano.github.io/FES/",
+    "linkLabel": "FES simulator",
+    "createdLabel": "Aug 2023",
+    "sortOrder": 1
+  },
+  {
+    "slug": "book-with-openai",
+    "title": "Book with OpenAi",
+    "body": "As soon as OpenAi's ChatGPT was released, I had the idea of making a book with it. I was among the first to do it with the publicly released version! Within about a week of its public release on November 30, 2022, I started crafting a way to automate the input and output with the AI. I could’ve used their API, which I did in a “for fun project” that generates recipes based on a list of ingredients given. However, they hadn’t released one yet, so I decided on a different approach and used PyAutoGUI to automate the process.\n\nIn conjunction with Jada Lok, we created a long list of themes for the AI. Then it was just about making the software to provide the input to the AI and receiving it, then editing the output to fit the pattern of a book and pasting it on a Microsoft Word. Then, using DALL-E, I created the cover idea and the name, refined by an artist.\n\nThe book is now on sale at Amazon. The book's concept is to be something you could use a random number generator, open the page it gives you and read something. Every page is a different poem with various themes, from quantum mechanics to dinosaur racing!\n\nCheck it out on Amazon: https://www.amazon.com/AIRI-AIRN-Marcos-Kano-ebook/dp/B0C417GSNB/",
+    "imagePath": "/showcase/projects/book.jpg",
+    "linkUrl": "https://www.amazon.com/AIRI-AIRN-Marcos-Kano-ebook/dp/B0C417GSNB/",
+    "linkLabel": "AIRI AIRN on Amazon",
+    "createdLabel": "Dec 2022",
+    "sortOrder": 2
+  }
+]
