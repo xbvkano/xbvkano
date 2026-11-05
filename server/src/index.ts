@@ -59,6 +59,10 @@ app.use(
 
 app.use("/media", express.static(uploadDir));
 
+app.get("/", (_req, res) => {
+  res.type("text/plain").send("hello world");
+});
+
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
