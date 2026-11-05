@@ -83,6 +83,12 @@ model JobApplication {
   status      ApplicationStatus @default(applied)
 }
 
+model Media {
+  id       Int    @id @default(autoincrement())
+  mimeType String
+  bytes    Bytes
+}
+
 model ApiToken {
   id        Int       @id @default(autoincrement())
   tokenHash String    @unique

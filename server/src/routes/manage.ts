@@ -20,7 +20,7 @@ import {
   updateReference,
   updateSkill,
 } from "../content.js";
-import { mediaUpload } from "../media.js";
+import { mediaUpload, saveImage } from "../media.js";
 import { requireSessionOrToken } from "../require-access.js";
 
 export const manageRouter = Router();
@@ -154,6 +154,10 @@ manageRouter.post("/media", (req, res, next) => {
       next(new ApiError(400, "Choose an image"));
       return;
     }
-    res.status(201).json({ imagePath: `/media/${req.file.filename}` });
+    saveImage(req.file)
+      .then((imagePath) => {
+        res.status(201).json({ imagePath });
+      })
+      .catch(next);
   });
 });

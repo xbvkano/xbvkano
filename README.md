@@ -47,7 +47,7 @@ Writes use the same prefix:
 - `POST /skills`, `PATCH /skills/:id`, `DELETE /skills/:id`
 - `POST /references`, `PATCH /references/:id`, `DELETE /references/:id`
 - `GET /applications`, `POST /applications`, `PATCH /applications/:id`, `DELETE /applications/:id`
-- `POST /media` with one multipart field named `file` (`png`, `jpeg`, `webp`, or `gif`, up to 5 MB). The response `imagePath` is served from `/media`.
+- `POST /media` with one multipart field named `file` (`png`, `jpeg`, `webp`, or `gif`, up to 5 MB). The image bytes are stored in the database. The response `imagePath` is served from `GET /media/:id`.
 
 A job application has `companyName`, `appliedOn`, and `status`: `applied`, `declined`, `rejected`, or `hired`. `GET /api/external/ping` still checks that a token is valid.
 

@@ -3,8 +3,9 @@ import express from "express";
 import session from "express-session";
 import multer from "multer";
 import { ApiError } from "./api-error.js";
+import { asyncHandler } from "./async-handler.js";
 import "./env.js";
-import { uploadDir } from "./media.js";
+import { readImage } from "./media.js";
 import { authRouter } from "./routes/auth.js";
 import { entryRouter } from "./routes/entries.js";
 import { externalRouter } from "./routes/external.js";
@@ -57,7 +58,19 @@ app.use(
   }),
 );
 
-app.use("/media", express.static(uploadDir));
+app.get(
+  "/media/:id",
+  asyncHandler(async (req, res) => {
+    const image = await readImage(Number(req.params.id));
+    if (!image) {
+      res.status(404).end();
+      return;
+    }
+    res.setHeader("Content-Type", image.mimeType);
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.send(Buffer.from(image.bytes));
+  }),
+);
 
 app.get("/", (_req, res) => {
   res.type("text/plain").send("hello world");

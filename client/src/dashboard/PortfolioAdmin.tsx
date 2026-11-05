@@ -1,4 +1,4 @@
-﻿import { useId, useState, type FormEvent } from "react";
+﻿import { useEffect, useId, useState, type FormEvent } from "react";
 import type { Profile } from "../api";
 import {
   createApplication,
@@ -31,6 +31,20 @@ export const entryKinds: { kind: EntryKind; heading: string; title: string; subt
 ];
 
 const statuses: ApplicationStatus[] = ["applied", "declined", "rejected", "hired"];
+
+function useFilePreview(file: File | null): string | null {
+  const [preview, setPreview] = useState<string | null>(null);
+  useEffect(() => {
+    if (!file) {
+      setPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+  return preview;
+}
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : "Could not save";
@@ -102,9 +116,11 @@ export function ProfileEditor({
   const [notes, setNotes] = useState(profile.notes);
   const [photoPath, setPhotoPath] = useState(profile.photoPath);
   const [file, setFile] = useState<File | null>(null);
+  const filePreview = useFilePreview(file);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileId = useId();
+  const previewSrc = filePreview ?? (photoPath ? mediaUrl(photoPath) : "");
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -159,7 +175,7 @@ export function ProfileEditor({
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
         </label>
-        {photoPath ? <img className="preview-image" src={mediaUrl(photoPath)} alt="" /> : null}
+        {previewSrc ? <img className="preview-image" src={previewSrc} alt="" /> : null}
         {error ? <p className="form-error">{error}</p> : null}
         <FormActions busy={busy} onClose={onClose} />
       </form>
@@ -192,9 +208,11 @@ export function EntryEditor({
   const [endedOn, setEndedOn] = useState(entry?.endedOn ?? "");
   const [skillIds, setSkillIds] = useState<number[]>(entry?.skills.map((skill) => skill.id) ?? []);
   const [file, setFile] = useState<File | null>(null);
+  const filePreview = useFilePreview(file);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileId = useId();
+  const previewSrc = filePreview ?? (imagePath ? mediaUrl(imagePath) : "");
 
   function toggleSkill(id: number) {
     setSkillIds((current) => (current.includes(id) ? current.filter((skillId) => skillId !== id) : [...current, id]));
@@ -257,7 +275,7 @@ export function EntryEditor({
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
         </label>
-        {imagePath ? <img className="preview-image" src={mediaUrl(imagePath)} alt="" /> : null}
+        {previewSrc ? <img className="preview-image" src={previewSrc} alt="" /> : null}
         <fieldset className="skill-list">
           <legend>Skills</legend>
           {skills.length === 0 ? <p>No skills yet.</p> : null}
