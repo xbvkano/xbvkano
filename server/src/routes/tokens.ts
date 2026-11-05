@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../async-handler.js";
-import { closeOpenHour, openHourStatus, startOpenHour } from "../open-hour.js";
+import { openHourStatus, saveOpenHour } from "../open-hour.js";
 import { requireSession } from "../require-session.js";
 import { currentTokenStatus, issueToken } from "../tokens.js";
 
@@ -30,16 +30,9 @@ tokenRouter.get(
   }),
 );
 
-tokenRouter.post(
+tokenRouter.put(
   "/open-hour",
-  asyncHandler(async (_req, res) => {
-    res.json(await startOpenHour());
-  }),
-);
-
-tokenRouter.delete(
-  "/open-hour",
-  asyncHandler(async (_req, res) => {
-    res.json(await closeOpenHour());
+  asyncHandler(async (req, res) => {
+    res.json(await saveOpenHour(req.body));
   }),
 );

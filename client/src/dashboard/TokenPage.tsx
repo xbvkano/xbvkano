@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 import {
-  closeOpenHour,
   createApiToken,
   getOpenHour,
   getTokenStatus,
-  startOpenHour,
+  saveOpenHour,
   type OpenHourStatus,
   type TokenStatus,
 } from "../api";
@@ -18,10 +17,18 @@ function formatExpiry(expiresAt: string): string {
 function instructionText(token: string | null, openHour: OpenHourStatus | null): string {
   const root = serverOrigin() || "the API origin";
   const bearer = token ?? "<paste the token here>";
-  const openText =
-    openHour?.open && openHour.openUntil
-      ? `Open hour is on until ${formatExpiry(openHour.openUntil)}. Until then, omit the Authorization header. The assistant can read the portfolio and create or update job applications without a token.`
-      : "Open hour is off. The assistant must send the token to read the portfolio and update applications.";
+  const openText = openHour?.enabled
+    ? `Schedule your job
+Run the job every day during this window. Nobody needs to be present, and no token is required during the window.
+
+Start: ${openHour.startsAt}
+End: ${openHour.endsAt}
+Time zone: ${openHour.timeZone}
+
+The window opens at the start time and closes at the end time. Schedule the job for this same window. During the window, omit the Authorization header. You can read the portfolio, create or update job applications, and read or save notes.
+Outside the window, send the bearer token below.`
+    : `Schedule your job
+The daily open-hour window is turned off. There is no token-free time. Send the bearer token on every request.`;
 
   return `Portfolio API for job applications
 
@@ -74,10 +81,11 @@ export function TokenPage() {
   const [visibleToken, setVisibleToken] = useState<string | null>(null);
   const [localExpiry, setLocalExpiry] = useState<string | null>(null);
   const [openHour, setOpenHour] = useState<OpenHourStatus | null>(null);
+  const [draft, setDraft] = useState<OpenHourStatus | null>(null);
   const [copied, setCopied] = useState<"token" | "instructions" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const [changingHour, setChangingHour] = useState(false);
+  const [savingHour, setSavingHour] = useState(false);
 
   useEffect(() => {
     if (!visibleToken) {
@@ -96,6 +104,7 @@ export function TokenPage() {
       ? statusQuery.data
       : null;
   const hour = openHour ?? (openHourQuery.status === "ready" ? openHourQuery.data : null);
+  const form = draft ?? hour;
 
   async function onGenerate() {
     setCreating(true);
@@ -122,27 +131,25 @@ export function TokenPage() {
     }
   }
 
-  async function onOpenHour() {
-    setChangingHour(true);
-    setError(null);
-    try {
-      setOpenHour(await startOpenHour());
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not open the hour");
-    } finally {
-      setChangingHour(false);
+  async function onSaveHour() {
+    if (!form) {
+      return;
     }
-  }
-
-  async function onCloseHour() {
-    setChangingHour(true);
+    setSavingHour(true);
     setError(null);
     try {
-      setOpenHour(await closeOpenHour());
+      const saved = await saveOpenHour({
+        enabled: form.enabled,
+        startsAt: form.startsAt,
+        endsAt: form.endsAt,
+        timeZone: form.timeZone.trim(),
+      });
+      setOpenHour(saved);
+      setDraft(saved);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not close the hour");
+      setError(caught instanceof Error ? caught.message : "Could not save the schedule");
     } finally {
-      setChangingHour(false);
+      setSavingHour(false);
     }
   }
 
@@ -152,8 +159,9 @@ export function TokenPage() {
         <div>
           <h1>API token</h1>
           <p className="page-description">
-            During open hour, an assistant can read the portfolio and update job applications without a token. Outside
-            that hour, the token is required. The token lasts 8 hours and is shown once.
+            Set a daily window, such as 3:00 AM to 8:00 AM. During that window an assistant can read the portfolio
+            and update job applications without a token. Schedule the job inside the window. Outside it, the token is
+            required. The token lasts 8 hours and is shown once.
           </p>
         </div>
       </div>
@@ -178,20 +186,57 @@ export function TokenPage() {
       ) : null}
 
       <section className="token-section">
-        <h2>Open hour</h2>
-        {hour?.open && hour.openUntil ? (
-          <p>Open until {formatExpiry(hour.openUntil)}. An assistant can apply without a token.</p>
-        ) : (
-          <p>Closed. An assistant needs a valid token to read the portfolio or update applications.</p>
-        )}
-        <div className="token-actions">
-          <button className="button button-primary" type="button" onClick={() => void onOpenHour()} disabled={changingHour}>
-            Open for 1 hour
-          </button>
-          <button className="button" type="button" onClick={() => void onCloseHour()} disabled={changingHour || !hour?.open}>
-            Close
-          </button>
-        </div>
+        <h2>Open hours</h2>
+        {hour?.enabled && hour.open ? (
+          <p>
+            Open now, until {hour.endsAt} {hour.timeZone}. An assistant can apply without a token.
+          </p>
+        ) : null}
+        {hour?.enabled && !hour.open ? (
+          <p>
+            Closed. The daily window is {hour.startsAt} to {hour.endsAt} {hour.timeZone}. Schedule the job inside that
+            window.
+          </p>
+        ) : null}
+        {hour && !hour.enabled ? <p>The daily window is off. An assistant needs a valid token.</p> : null}
+        {form ? (
+          <div className="schedule-fields">
+            <label className="field">
+              Start
+              <input
+                type="time"
+                value={form.startsAt}
+                onChange={(event) => setDraft({ ...form, startsAt: event.target.value })}
+              />
+            </label>
+            <label className="field">
+              End
+              <input
+                type="time"
+                value={form.endsAt}
+                onChange={(event) => setDraft({ ...form, endsAt: event.target.value })}
+              />
+            </label>
+            <label className="field">
+              Time zone
+              <input
+                value={form.timeZone}
+                onChange={(event) => setDraft({ ...form, timeZone: event.target.value })}
+              />
+            </label>
+            <label className="schedule-toggle">
+              <input
+                type="checkbox"
+                checked={form.enabled}
+                onChange={(event) => setDraft({ ...form, enabled: event.target.checked })}
+              />
+              Use this window
+            </label>
+          </div>
+        ) : null}
+        <button className="button button-primary" type="button" onClick={() => void onSaveHour()} disabled={savingHour || !form}>
+          Save schedule
+        </button>
       </section>
 
       <section className="token-section">

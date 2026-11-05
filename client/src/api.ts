@@ -84,23 +84,27 @@ export function getTokenStatus() {
 
 export type OpenHourStatus = {
   open: boolean;
-  openUntil: string | null;
+  enabled: boolean;
+  startsAt: string;
+  endsAt: string;
+  timeZone: string;
 };
 
 export function getOpenHour() {
   return getJson<OpenHourStatus>("/api/auth/tokens/open-hour");
 }
 
-export function startOpenHour() {
-  return sendJson<OpenHourStatus>("/api/auth/tokens/open-hour", "POST");
+export function saveOpenHour(schedule: Omit<OpenHourStatus, "open">) {
+  return sendJson<OpenHourStatus>("/api/auth/tokens/open-hour", "PUT", schedule);
 }
 
-export function closeOpenHour() {
-  return sendJson<OpenHourStatus>("/api/auth/tokens/open-hour", "DELETE");
-}
-
-async function sendJson<T>(path: string, method: string): Promise<T> {
-  const response = await fetch(serverUrl(path), { method, credentials: "include" });
+async function sendJson<T>(path: string, method: string, body?: unknown): Promise<T> {
+  const response = await fetch(serverUrl(path), {
+    method,
+    credentials: "include",
+    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
   if (!response.ok) {
     throw new Error("Request failed");
   }

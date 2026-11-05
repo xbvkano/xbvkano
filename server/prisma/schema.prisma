@@ -90,8 +90,11 @@ model Media {
 }
 
 model OpenHour {
-  id        Int       @id
-  openUntil DateTime?
+  id        Int     @id
+  enabled   Boolean @default(true)
+  startsAt  String  @default("03:00")
+  endsAt    String  @default("08:00")
+  timeZone  String  @default("America/Los_Angeles")
 }
 
 model AssistantNote {

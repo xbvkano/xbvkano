@@ -29,7 +29,7 @@ On the server, add the Pages origin to `CLIENT_ORIGIN`. For this repository that
 
 ## External API
 
-An outside assistant uses `/api/external` while applying for jobs. During open hour, which is started on the dashboard token page and lasts one hour, those requests do not need a token. Outside open hour, send `Authorization: Bearer <token>`. The token lasts 8 hours. Creating another one revokes the previous token. The token cannot change the profile, projects, experience, or other dashboard records.
+An outside assistant uses `/api/external` while applying for jobs. Open hours are a daily window set on the dashboard token page, such as 3:00 AM to 8:00 AM in `America/Los_Angeles`. The copied instructions on that page include the start, end, and time zone so the assistant can schedule its job for the same window. During that window those requests do not need a token. Outside the window, send `Authorization: Bearer <token>`. The token lasts 8 hours. Creating another one revokes the previous token. The token cannot change the profile, projects, experience, or other dashboard records.
 
 `GET /api/health` checks that the server is up and does not need a token. `GET /api/external/health` checks the bearer token and the database. A valid token returns `{"ok":true,"token":"active","database":"ok"}`.
 
