@@ -478,6 +478,12 @@ main.site-main {
   background: #f3f0ea;
 }
 
+.entry-card img.degree-image {
+  max-height: 42rem;
+  object-fit: contain;
+  object-position: center;
+}
+
 .entry-body {
   padding: 1rem 1.1rem 1.15rem;
 }

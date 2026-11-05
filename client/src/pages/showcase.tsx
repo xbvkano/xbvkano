@@ -41,11 +41,21 @@ function ShowcaseGate({
   return children(query.data);
 }
 
-function EntryCard({ entry, currentLabel }: { entry: PortfolioEntry; currentLabel: boolean }) {
+function EntryCard({
+  entry,
+  currentLabel,
+  tallImage,
+}: {
+  entry: PortfolioEntry;
+  currentLabel: boolean;
+  tallImage?: boolean;
+}) {
   const dates = dateLine(entry, currentLabel);
   return (
     <article className="entry-card">
-      {entry.imagePath ? <img src={mediaUrl(entry.imagePath)} alt="" /> : null}
+      {entry.imagePath ? (
+        <img className={tallImage ? "degree-image" : undefined} src={mediaUrl(entry.imagePath)} alt="" />
+      ) : null}
       <div className="entry-body">
         <h2>{entry.title}</h2>
         {entry.subtitle || dates ? (
@@ -81,11 +91,13 @@ function EntryList({
   description,
   entries,
   currentLabel,
+  tallImage,
 }: {
   title: string;
   description: string;
   entries: PortfolioEntry[];
   currentLabel: boolean;
+  tallImage?: boolean;
 }) {
   return (
     <>
@@ -94,7 +106,7 @@ function EntryList({
       {entries.length === 0 ? <p>Nothing here yet.</p> : null}
       <div className="entry-list">
         {entries.map((entry) => (
-          <EntryCard key={entry.slug} entry={entry} currentLabel={currentLabel} />
+          <EntryCard key={entry.slug} entry={entry} currentLabel={currentLabel} tallImage={tallImage} />
         ))}
       </div>
     </>
@@ -188,6 +200,7 @@ export function EducationPage() {
             description="Schools and degrees."
             entries={showcase.entries.education}
             currentLabel={false}
+            tallImage
           />
           {showcase.entries.coursework.length > 0 ? (
             <section className="about">
