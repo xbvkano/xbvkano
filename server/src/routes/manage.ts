@@ -20,6 +20,7 @@ import {
   updateReference,
   updateSkill,
 } from "../content.js";
+import { courseworkCatalog } from "../coursework.js";
 import { mediaUpload, saveImage } from "../media.js";
 import { requireSessionOrToken } from "../require-access.js";
 
@@ -30,7 +31,8 @@ manageRouter.use(requireSessionOrToken);
 manageRouter.get(
   "/portfolio",
   asyncHandler(async (_req, res) => {
-    res.json(await loadPortfolio());
+    const portfolio = await loadPortfolio();
+    res.json({ ...portfolio, coursework: courseworkCatalog() });
   }),
 );
 

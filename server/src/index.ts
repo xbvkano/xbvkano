@@ -7,6 +7,7 @@ import { asyncHandler } from "./async-handler.js";
 import "./env.js";
 import { readImage } from "./media.js";
 import { authRouter } from "./routes/auth.js";
+import { courseworkRouter } from "./routes/coursework.js";
 import { entryRouter } from "./routes/entries.js";
 import { externalRouter } from "./routes/external.js";
 import { profileRouter } from "./routes/profile.js";
@@ -86,6 +87,7 @@ app.use("/api/external", externalRouter);
 
 app.use("/api/profile", profileRouter);
 app.use("/api/showcase", showcaseRouter);
+app.use("/api/coursework", courseworkRouter);
 app.use("/api/projects", entryRouter("project"));
 app.use("/api/certifications", entryRouter("certificate"));
 

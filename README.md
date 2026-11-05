@@ -40,6 +40,8 @@ An outside assistant reads and updates portfolio data at `/api/external`. Send `
 
 Dates are `YYYY-MM-DD`. A missing `endedOn` on an experience entry means the role is current.
 
+`GET /api/coursework` is public and returns the hardcoded course list. Each item includes `shortName`, `fullName`, `description`, `school`, and `term`. The same list is included on `GET /api/showcase` under `coursework` and `entries.coursework`, and on `GET /api/external/portfolio` under `coursework`.
+
 Writes use the same prefix:
 
 - `PATCH /profile`
