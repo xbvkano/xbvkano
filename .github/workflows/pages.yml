@@ -32,28 +32,31 @@ jobs:
           node-version: 22
 
       - name: Install
+        working-directory: client
         run: npm install
 
       - name: Build client
+        working-directory: client
         env:
-          VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
-          VITE_LOGIN_CIPHER_SECRET: ${{ secrets.VITE_LOGIN_CIPHER_SECRET }}
+          VITE_SERVER_URL: ${{ vars.VITE_SERVER_URL }}
+          VITE_LOGIN_CIPHER_SECRET: ${{ vars.VITE_LOGIN_CIPHER_SECRET }}
           VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}
         run: |
           if [ -z "$VITE_SERVER_URL" ]; then
-            echo "Add a VITE_SERVER_URL Actions secret set to the API origin, such as https://api.example.com"
+            echo "Add a VITE_SERVER_URL variable on the github-pages environment, set to the API origin, such as https://api.example.com"
             exit 1
           fi
           if [ -z "$VITE_LOGIN_CIPHER_SECRET" ]; then
-            echo "Add a VITE_LOGIN_CIPHER_SECRET Actions secret that matches LOGIN_CIPHER_SECRET on the server"
+            echo "Add a VITE_LOGIN_CIPHER_SECRET variable on the github-pages environment that matches LOGIN_CIPHER_SECRET on the server"
             exit 1
           fi
-          npm run build --workspace=client
+          npm run build
 
       - name: Add the Pages SPA fallback
+        working-directory: client
         run: |
-          cp client/dist/index.html client/dist/404.html
-          touch client/dist/.nojekyll
+          cp dist/index.html dist/404.html
+          touch dist/.nojekyll
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
