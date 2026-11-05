@@ -9,6 +9,7 @@ import { authRouter } from "./routes/auth.js";
 import { entryRouter } from "./routes/entries.js";
 import { externalRouter } from "./routes/external.js";
 import { profileRouter } from "./routes/profile.js";
+import { showcaseRouter } from "./routes/showcase.js";
 import { tokenRouter } from "./routes/tokens.js";
 
 const sessionSecret = process.env.SESSION_SECRET;
@@ -16,8 +17,29 @@ if (!sessionSecret || !process.env.DASHBOARD_PASSWORD || !process.env.LOGIN_CIPH
   throw new Error("SESSION_SECRET, DASHBOARD_PASSWORD, and LOGIN_CIPHER_SECRET are required");
 }
 
+const clientOrigins = (process.env.CLIENT_ORIGIN ?? "http://localhost:5173")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter((origin) => origin.length > 0);
+
 const app = express();
 app.set("trust proxy", 1);
+
+app.use((req, res, next) => {
+  const origin = req.get("origin");
+  if (origin && clientOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+  }
+  if (req.method === "OPTIONS") {
+    res.sendStatus(204);
+    return;
+  }
+  next();
+});
 
 app.use(express.json());
 app.use(
@@ -44,6 +66,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/external", externalRouter);
 
 app.use("/api/profile", profileRouter);
+app.use("/api/showcase", showcaseRouter);
 app.use("/api/projects", entryRouter("project"));
 app.use("/api/certifications", entryRouter("certificate"));
 

@@ -16,7 +16,7 @@ From `server`, `npx prisma migrate dev` and `npx prisma db seed` use `server/.en
 - Client: http://localhost:5173
 - API: http://localhost:3001
 
-`npm run dev` starts both. The client proxies `/api` and `/media` to the API.
+`npm run dev` starts both. The client sends API and uploaded-image requests to `VITE_SERVER_URL` in `client/.env`. That value is the server root, with no path on the end, such as `http://localhost:3001` or your deployed API origin. `CLIENT_ORIGIN` in `server/.env` is the browser origin allowed to call that API with the login cookie, such as `http://localhost:5173`. Separate several origins with commas. Restart both processes after changing either value. The Vite proxy for `/api` and `/media` remains only for a client built without `VITE_SERVER_URL`.
 
 ## External API
 

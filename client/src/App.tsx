@@ -10,16 +10,16 @@ import {
 import { TokenPage } from "./dashboard/TokenPage";
 import { DashboardLayout } from "./layouts/DashboardLayout";
 import { PortfolioLayout } from "./layouts/PortfolioLayout";
-import { CertificationsPage } from "./pages/CertificationsPage";
-import { HomePage } from "./pages/HomePage";
-import { ProjectsPage } from "./pages/ProjectsPage";
+import { CertificationsPage, EducationPage, ExperiencePage, HomePage, ProjectsPage } from "./pages/showcase";
 
 export function App() {
   return (
     <Routes>
       <Route element={<PortfolioLayout />}>
         <Route path="/" element={<HomePage />} />
+        <Route path="/experience" element={<ExperiencePage />} />
         <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/education" element={<EducationPage />} />
         <Route path="/certifications" element={<CertificationsPage />} />
       </Route>
       <Route path="/dashboard" element={<DashboardLayout />}>

@@ -20,6 +20,7 @@ import {
   type Skill,
 } from "./api";
 import { Modal } from "./Modal";
+import { mediaUrl } from "../serverUrl";
 
 export const entryKinds: { kind: EntryKind; heading: string; title: string; subtitle: string }[] = [
   { kind: "project", heading: "Projects", title: "Title", subtitle: "Subtitle" },
@@ -158,7 +159,7 @@ export function ProfileEditor({
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
         </label>
-        {photoPath ? <img className="preview-image" src={photoPath} alt="" /> : null}
+        {photoPath ? <img className="preview-image" src={mediaUrl(photoPath)} alt="" /> : null}
         {error ? <p className="form-error">{error}</p> : null}
         <FormActions busy={busy} onClose={onClose} />
       </form>
@@ -256,7 +257,7 @@ export function EntryEditor({
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
         </label>
-        {imagePath ? <img className="preview-image" src={imagePath} alt="" /> : null}
+        {imagePath ? <img className="preview-image" src={mediaUrl(imagePath)} alt="" /> : null}
         <fieldset className="skill-list">
           <legend>Skills</legend>
           {skills.length === 0 ? <p>No skills yet.</p> : null}

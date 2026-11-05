@@ -1,4 +1,5 @@
 import type { Profile } from "../api";
+import { serverUrl } from "../serverUrl";
 
 export type EntryKind = "project" | "certificate" | "experience" | "education" | "coursework";
 export type ApplicationStatus = "applied" | "declined" | "rejected" | "hired";
@@ -79,7 +80,7 @@ async function errorMessage(response: Response, fallback: string): Promise<strin
 }
 
 async function send<T>(path: string, method: string, body?: unknown): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(serverUrl(path), {
     method,
     credentials: "include",
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
@@ -157,7 +158,7 @@ export function deleteApplication(id: number) {
 export async function uploadImage(file: File): Promise<{ imagePath: string }> {
   const body = new FormData();
   body.append("file", file);
-  const response = await fetch("/api/external/media", {
+  const response = await fetch(serverUrl("/api/external/media"), {
     method: "POST",
     credentials: "include",
     body,

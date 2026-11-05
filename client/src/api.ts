@@ -1,4 +1,5 @@
 import { encryptPassword } from "./loginCipher";
+import { serverUrl } from "./serverUrl";
 
 export type Profile = {
   name: string;
@@ -26,10 +27,39 @@ export type PortfolioEntry = {
   startedOn: string | null;
   endedOn: string | null;
   sortOrder: number;
+  skills?: { id: number; name: string }[];
+};
+
+export type ShowcaseSkill = {
+  id: number;
+  name: string;
+  shortDescription: string;
+  longDescription: string;
+};
+
+export type ShowcaseReference = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  shortDescription: string;
+};
+
+export type Showcase = {
+  profile: Profile;
+  entries: {
+    project: PortfolioEntry[];
+    certificate: PortfolioEntry[];
+    experience: PortfolioEntry[];
+    education: PortfolioEntry[];
+    coursework: PortfolioEntry[];
+  };
+  skills: ShowcaseSkill[];
+  references: ShowcaseReference[];
 };
 
 async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(path, { credentials: "include" });
+  const response = await fetch(serverUrl(path), { credentials: "include" });
   if (!response.ok) {
     throw new Error(`Request failed (${response.status})`);
   }
@@ -53,7 +83,7 @@ export function getTokenStatus() {
 }
 
 export async function createApiToken(): Promise<{ token: string; expiresAt: string }> {
-  const response = await fetch("/api/auth/tokens", {
+  const response = await fetch(serverUrl("/api/auth/tokens"), {
     method: "POST",
     credentials: "include",
   });
@@ -65,7 +95,7 @@ export async function createApiToken(): Promise<{ token: string; expiresAt: stri
 
 export async function login(password: string): Promise<void> {
   const encrypted = await encryptPassword(password);
-  const response = await fetch("/api/auth/login", {
+  const response = await fetch(serverUrl("/api/auth/login"), {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -95,4 +125,8 @@ export function getProjects() {
 
 export function getCertifications() {
   return getJson<PortfolioEntry[]>("/api/certifications");
+}
+
+export function getShowcase() {
+  return getJson<Showcase>("/api/showcase");
 }
