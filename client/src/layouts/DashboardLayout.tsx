@@ -73,7 +73,9 @@ export function DashboardLayout() {
   const [needsLogin, setNeedsLogin] = useState(false);
   const authenticated = !needsLogin && (signedIn || (query.status === "ready" && query.data.authenticated));
 
-  useEffect(() => onAuthFailure(() => setNeedsLogin(true)), []);
+  useEffect(() => {
+    return onAuthFailure(() => setNeedsLogin(true));
+  }, []);
 
   if (query.status === "loading" && !signedIn) {
     return (

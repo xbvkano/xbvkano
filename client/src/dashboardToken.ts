@@ -28,7 +28,9 @@ export function clearDashboardToken() {
 
 export function onAuthFailure(listener: () => void) {
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 }
 
 export function notifyAuthFailure() {
