@@ -30,11 +30,28 @@ Outside the window, send the bearer token below.`
     : `Schedule your job
 The daily open-hour window is turned off. There is no token-free time. Send the bearer token on every request.`;
 
+  const applyRules = `Daily applications
+Schedule this job every day inside the open-hour window and apply to jobs during that run.
+
+Apply only when every rule below is true:
+- Pay is at least $100,000 a year. Skip the job when pay is missing or lower.
+- The job is full time.
+- The job is remote.
+- The job is in the United States.
+
+If a captcha appears at any point, do not attempt it. Leave that application and go to the next job.
+Submit 10 applications a day. A job left because of a captcha does not count toward the 10.
+Read the existing applications first and do not apply again to a company that is already listed.
+
+After each application is submitted, save it with the API. Use the company name, today's date, and status "applied". Use the upsert request below.`;
+
   return `Portfolio API for job applications
 
 Server root: ${root}
 
 ${openText}
+
+${applyRules}
 
 Send this header when a token is required:
 Authorization: Bearer ${bearer}

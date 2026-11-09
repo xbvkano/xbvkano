@@ -5,3 +5,11 @@ declare module "express-session" {
     authenticated?: boolean;
   }
 }
+
+declare global {
+  namespace Express {
+    interface Locals {
+      accessNote?: string;
+    }
+  }
+}

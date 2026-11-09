@@ -1,4 +1,5 @@
 import type { Profile } from "../api";
+import { isAuthFailure, notifyAuthFailure, withAuth } from "../dashboardToken";
 import { serverUrl } from "../serverUrl";
 
 export type EntryKind = "project" | "certificate" | "experience" | "education" | "coursework";
@@ -80,14 +81,21 @@ async function errorMessage(response: Response, fallback: string): Promise<strin
 }
 
 async function send<T>(path: string, method: string, body?: unknown): Promise<T> {
-  const response = await fetch(serverUrl(path), {
-    method,
-    credentials: "include",
-    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  const headers = new Headers(body === undefined ? undefined : { "Content-Type": "application/json" });
+  const response = await fetch(
+    serverUrl(path),
+    withAuth({
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
+  );
   if (!response.ok) {
-    throw new Error(await errorMessage(response, `Request failed (${response.status})`));
+    const message = await errorMessage(response, `Request failed (${response.status})`);
+    if (isAuthFailure(response.status, message)) {
+      notifyAuthFailure();
+    }
+    throw new Error(message);
   }
   if (response.status === 204) {
     return undefined as T;
@@ -162,13 +170,13 @@ export function deleteApplication(id: number) {
 export async function uploadImage(file: File): Promise<{ imagePath: string }> {
   const body = new FormData();
   body.append("file", file);
-  const response = await fetch(serverUrl("/api/external/media"), {
-    method: "POST",
-    credentials: "include",
-    body,
-  });
+  const response = await fetch(serverUrl("/api/external/media"), withAuth({ method: "POST", body }));
   if (!response.ok) {
-    throw new Error(await errorMessage(response, "Could not upload image"));
+    const message = await errorMessage(response, "Could not upload image");
+    if (isAuthFailure(response.status, message)) {
+      notifyAuthFailure();
+    }
+    throw new Error(message);
   }
   return response.json() as Promise<{ imagePath: string }>;
 }

@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, NavLink, Navigate, Outlet, useLocation } from "react-router-dom";
 import { getSession, login } from "../api";
+import { onAuthFailure } from "../dashboardToken";
 import { useQuery } from "../useQuery";
 import { PortfolioProvider } from "../dashboard/PortfolioData";
 
@@ -22,7 +23,7 @@ function linkClass({ isActive }: { isActive: boolean }) {
   return isActive ? "dashboard-link active" : "dashboard-link";
 }
 
-function LoginForm({ onSuccess }: { onSuccess: () => void }) {
+function LoginForm({ expired, onSuccess }: { expired: boolean; onSuccess: () => void }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -45,6 +46,7 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <main className="login-screen">
       <h1>Log in</h1>
+      {expired ? <p>Your login expired. Log in again.</p> : null}
       <form className="login-form" onSubmit={onSubmit}>
         <label htmlFor="password">Password</label>
         <input
@@ -68,7 +70,10 @@ export function DashboardLayout() {
   const query = useQuery(getSession);
   const location = useLocation();
   const [signedIn, setSignedIn] = useState(false);
-  const authenticated = signedIn || (query.status === "ready" && query.data.authenticated);
+  const [needsLogin, setNeedsLogin] = useState(false);
+  const authenticated = !needsLogin && (signedIn || (query.status === "ready" && query.data.authenticated));
+
+  useEffect(() => onAuthFailure(() => setNeedsLogin(true)), []);
 
   if (query.status === "loading" && !signedIn) {
     return (
@@ -90,7 +95,15 @@ export function DashboardLayout() {
     if (location.pathname !== "/dashboard") {
       return <Navigate to="/dashboard" replace />;
     }
-    return <LoginForm onSuccess={() => setSignedIn(true)} />;
+    return (
+      <LoginForm
+        expired={needsLogin}
+        onSuccess={() => {
+          setNeedsLogin(false);
+          setSignedIn(true);
+        }}
+      />
+    );
   }
 
   return (

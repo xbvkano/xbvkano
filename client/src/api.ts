@@ -1,3 +1,4 @@
+import { isAuthFailure, notifyAuthFailure, saveDashboardToken, withAuth } from "./dashboardToken";
 import { encryptPassword } from "./loginCipher";
 import { serverUrl } from "./serverUrl";
 
@@ -59,11 +60,27 @@ export type Showcase = {
 };
 
 async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(serverUrl(path), { credentials: "include" });
+  const response = await fetch(serverUrl(path), withAuth());
   if (!response.ok) {
-    throw new Error(`Request failed (${response.status})`);
+    const message = await errorText(response, `Request failed (${response.status})`);
+    if (isAuthFailure(response.status, message)) {
+      notifyAuthFailure();
+    }
+    throw new Error(message);
   }
   return response.json() as Promise<T>;
+}
+
+async function errorText(response: Response, fallback: string): Promise<string> {
+  try {
+    const payload = (await response.json()) as { error?: unknown };
+    if (typeof payload.error === "string") {
+      return payload.error;
+    }
+  } catch {
+    // The response had no JSON body.
+  }
+  return fallback;
 }
 
 export type Session = {
@@ -99,25 +116,33 @@ export function saveOpenHour(schedule: Omit<OpenHourStatus, "open">) {
 }
 
 async function sendJson<T>(path: string, method: string, body?: unknown): Promise<T> {
-  const response = await fetch(serverUrl(path), {
-    method,
-    credentials: "include",
-    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  const headers = new Headers(body === undefined ? undefined : { "Content-Type": "application/json" });
+  const response = await fetch(
+    serverUrl(path),
+    withAuth({
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
+  );
   if (!response.ok) {
-    throw new Error("Request failed");
+    const message = await errorText(response, "Request failed");
+    if (isAuthFailure(response.status, message)) {
+      notifyAuthFailure();
+    }
+    throw new Error(message);
   }
   return response.json() as Promise<T>;
 }
 
 export async function createApiToken(): Promise<{ token: string; expiresAt: string }> {
-  const response = await fetch(serverUrl("/api/auth/tokens"), {
-    method: "POST",
-    credentials: "include",
-  });
+  const response = await fetch(serverUrl("/api/auth/tokens"), withAuth({ method: "POST" }));
   if (!response.ok) {
-    throw new Error("Could not create token");
+    const message = await errorText(response, "Could not create token");
+    if (isAuthFailure(response.status, message)) {
+      notifyAuthFailure();
+    }
+    throw new Error(message);
   }
   return response.json() as Promise<{ token: string; expiresAt: string }>;
 }
@@ -141,6 +166,14 @@ export async function login(password: string): Promise<void> {
       // The response had no JSON body, so keep the fallback message.
     }
     throw new Error(message);
+  }
+  try {
+    const body = (await response.json()) as { token?: unknown };
+    if (typeof body.token === "string") {
+      saveDashboardToken(body.token);
+    }
+  } catch {
+    // A cookie-only login still works in browsers that keep it.
   }
 }
 

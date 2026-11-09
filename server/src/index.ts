@@ -5,6 +5,7 @@ import multer from "multer";
 import { ApiError } from "./api-error.js";
 import { asyncHandler } from "./async-handler.js";
 import "./env.js";
+import { logBlock, logError } from "./log.js";
 import { readImage } from "./media.js";
 import { authRouter } from "./routes/auth.js";
 import { courseworkRouter } from "./routes/coursework.js";
@@ -59,6 +60,29 @@ app.use(
   }),
 );
 
+app.use((req, res, next) => {
+  if (!req.path.startsWith("/api") || req.path === "/api/health") {
+    next();
+    return;
+  }
+  const started = Date.now();
+  res.on("finish", () => {
+    const origin = req.get("origin");
+    const allowed = origin ? clientOrigins.includes(origin) : false;
+    const authorization = req.get("authorization") ?? "";
+    const bearer = authorization.length === 0 ? "none" : authorization.startsWith("Bearer ") ? "present" : "not a bearer token";
+    logBlock(`${req.method} ${req.originalUrl}`, {
+      status: `${res.statusCode} in ${Date.now() - started}ms`,
+      origin: origin ? `${origin} (${allowed ? "allowed" : "not allowed"})` : "none",
+      cookie: req.headers.cookie?.includes("connect.sid") ? "present" : "missing",
+      session: req.session.authenticated === true ? "logged in" : "not logged in",
+      bearer,
+      decision: res.locals.accessNote ?? "completed",
+    });
+  });
+  next();
+});
+
 app.get(
   "/media/:id",
   asyncHandler(async (req, res) => {
@@ -91,16 +115,19 @@ app.use("/api/coursework", courseworkRouter);
 app.use("/api/projects", entryRouter("project"));
 app.use("/api/certifications", entryRouter("certificate"));
 
-const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   if (err instanceof ApiError) {
+    res.locals.accessNote = `rejected: ${err.message}`;
     res.status(err.status).json({ error: err.message });
     return;
   }
   if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+    res.locals.accessNote = "rejected: image is larger than 5 MB";
     res.status(400).json({ error: "Image must be 5 MB or smaller" });
     return;
   }
-  console.error(err);
+  res.locals.accessNote = "failed with an unexpected error";
+  logError(`error ${req.method} ${req.originalUrl}`, err);
   res.status(500).json({ error: "Internal server error" });
 };
 
@@ -108,5 +135,9 @@ app.use(errorHandler);
 
 const port = Number(process.env.PORT ?? 3001);
 app.listen(port, () => {
-  console.log(`API listening on http://localhost:${port}`);
+  logBlock("API started", {
+    port: String(port),
+    cookies: crossSiteSession ? "cross-site (SameSite=None, Secure)" : "same-site (SameSite=Lax)",
+    origins: clientOrigins.join(", ") || "(none)",
+  });
 });

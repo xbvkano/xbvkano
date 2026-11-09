@@ -1,7 +1,9 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { asyncHandler } from "../async-handler.js";
+import { issueDashboardToken, requestHasDashboardToken } from "../dashboard-token.js";
 import { decryptPassword } from "../login-cipher.js";
+import { note } from "../log.js";
 import { passwordsMatch } from "../passwords.js";
 
 const loginLimiter = rateLimit({
@@ -18,7 +20,17 @@ const loginLimiter = rateLimit({
 export const authRouter = Router();
 
 authRouter.get("/session", (req, res) => {
-  res.json({ authenticated: req.session.authenticated === true });
+  const cookie = req.session.authenticated === true;
+  const dashboardToken = requestHasDashboardToken(req);
+  note(
+    res,
+    cookie
+      ? "session: logged in by cookie"
+      : dashboardToken
+        ? "session: logged in by dashboard token"
+        : "session: not logged in",
+  );
+  res.json({ authenticated: cookie || dashboardToken });
 });
 
 authRouter.post(
@@ -28,12 +40,15 @@ authRouter.post(
     const expected = process.env.DASHBOARD_PASSWORD;
     const password = decryptPassword(req.body);
     if (!expected || password === null || !passwordsMatch(password, expected)) {
+      note(res, password === null ? "login denied: password could not be read" : "login denied: password did not match");
       res.status(401).json({ error: "Invalid password" });
       return;
     }
 
     req.session.authenticated = true;
-    res.json({ authenticated: true });
+    const issued = issueDashboardToken();
+    note(res, "login accepted and a dashboard token was issued");
+    res.json({ authenticated: true, token: issued.token, expiresAt: issued.expiresAt });
   }),
 );
 
