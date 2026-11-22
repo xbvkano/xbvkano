@@ -384,6 +384,74 @@ li + li {
   opacity: 0.4;
 }
 
+.application-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.application-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.application-filters select,
+.application-filters input {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+}
+
+.row-actions .view-button.status-applied {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.row-actions .view-button.status-declined {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+
+.row-actions .view-button.status-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.row-actions .view-button.status-hired {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+.row-actions .view-button[aria-pressed="true"] {
+  color: #fff;
+}
+
+.row-actions .view-button.status-applied[aria-pressed="true"] {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.row-actions .view-button.status-declined[aria-pressed="true"] {
+  background: #92400e;
+  border-color: #92400e;
+}
+
+.row-actions .view-button.status-rejected[aria-pressed="true"] {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.row-actions .view-button.status-hired[aria-pressed="true"] {
+  background: #166534;
+  border-color: #166534;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -394,6 +462,10 @@ li + li {
   padding: 1rem;
   overflow: auto;
   background: rgba(0, 0, 0, 0.4);
+}
+
+.modal-backdrop-center {
+  align-items: safe center;
 }
 
 .modal {

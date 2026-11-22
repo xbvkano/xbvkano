@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { getTokenStatus } from "../api";
 import { useQuery } from "../useQuery";
@@ -407,7 +407,7 @@ function ApplicationView({
   }
 
   return (
-    <Modal title={application.companyName}>
+    <Modal title={application.companyName} centered>
       <div className="application-details">
         <p>
           <StatusPill status={application.status} />
@@ -443,11 +443,52 @@ function ApplicationView({
   );
 }
 
+const applicationStatuses: ApplicationStatus[] = ["applied", "declined", "rejected", "hired"];
+
+type ApplicationOrder = "newest" | "oldest" | "az" | "za";
+
+function orderedApplications(
+  applications: JobApplication[],
+  status: ApplicationStatus | "all",
+  date: string,
+  order: ApplicationOrder,
+) {
+  const filtered = applications.filter((application) => {
+    if (status !== "all" && application.status !== status) {
+      return false;
+    }
+    if (date && application.appliedOn !== date) {
+      return false;
+    }
+    return true;
+  });
+  const sorted = [...filtered];
+  sorted.sort((left, right) => {
+    if (order === "az" || order === "za") {
+      const byName = left.companyName.localeCompare(right.companyName);
+      return order === "az" ? byName : -byName;
+    }
+    const byDate = left.appliedOn.localeCompare(right.appliedOn);
+    if (byDate !== 0) {
+      return order === "newest" ? -byDate : byDate;
+    }
+    return right.id - left.id;
+  });
+  return sorted;
+}
+
 export function ApplicationsPage() {
   const { applications, reload } = usePortfolio();
   const [view, setView] = useState<JobApplication | null>(null);
   const [editor, setEditor] = useState<JobApplication | null | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">("all");
+  const [dateFilter, setDateFilter] = useState("");
+  const [order, setOrder] = useState<ApplicationOrder>("newest");
+  const statusFilterId = useId();
+  const dateFilterId = useId();
+  const orderId = useId();
   const removal = useDelete("application");
+  const visible = orderedApplications(applications, statusFilter, dateFilter, order);
 
   useEffect(() => {
     if (!view) {
@@ -477,34 +518,80 @@ export function ApplicationsPage() {
       {applications.length === 0 ? (
         <p>No records yet.</p>
       ) : (
-        <table className="record-table">
-          <thead>
-            <tr>
-              <th>Record</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {applications.map((application) => (
-              <tr key={application.id}>
-                <td>
-                  <div>{application.companyName}</div>
-                  <div className="application-summary">
-                    <span>{application.appliedOn}</span>
-                    <StatusPill status={application.status} />
-                  </div>
-                </td>
-                <td>
-                  <div className="row-actions row-actions-single">
-                    <button className="button" type="button" onClick={() => setView(application)}>
-                      View
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <div className="application-filters">
+            <label htmlFor={statusFilterId}>
+              Status
+              <select
+                id={statusFilterId}
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as ApplicationStatus | "all")}
+              >
+                <option value="all">All</option>
+                {applicationStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label htmlFor={dateFilterId}>
+              Date
+              <input
+                id={dateFilterId}
+                type="date"
+                value={dateFilter}
+                onChange={(event) => setDateFilter(event.target.value)}
+              />
+            </label>
+            <label htmlFor={orderId}>
+              Order
+              <select id={orderId} value={order} onChange={(event) => setOrder(event.target.value as ApplicationOrder)}>
+                <option value="newest">Newest date</option>
+                <option value="oldest">Oldest date</option>
+                <option value="az">Alphabetical</option>
+                <option value="za">Alphabetical, reverse</option>
+              </select>
+            </label>
+          </div>
+          {visible.length === 0 ? (
+            <p>No applications match.</p>
+          ) : (
+            <table className="record-table">
+              <thead>
+                <tr>
+                  <th>Record</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((application) => (
+                  <tr key={application.id}>
+                    <td>
+                      <div>{application.companyName}</div>
+                      <div className="application-summary">
+                        <span>{application.appliedOn}</span>
+                        <StatusPill status={application.status} />
+                      </div>
+                    </td>
+                    <td>
+                      <div className="row-actions row-actions-single">
+                        <button
+                          className={`button view-button status-${application.status}`}
+                          type="button"
+                          aria-pressed={view?.id === application.id}
+                          onClick={() => setView(application)}
+                        >
+                          View
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </>
       )}
       {editor !== undefined ? (
         <ApplicationEditor
