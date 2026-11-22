@@ -407,6 +407,7 @@ export function ApplicationEditor({
   const [companyName, setCompanyName] = useState(application?.companyName ?? "");
   const [appliedOn, setAppliedOn] = useState(application?.appliedOn ?? "");
   const [status, setStatus] = useState<ApplicationStatus>(application?.status ?? "applied");
+  const [description, setDescription] = useState(application?.description ?? "");
   const [resumePath, setResumePath] = useState<string | null>(application?.resumePath ?? null);
   const [coverPath, setCoverPath] = useState<string | null>(application?.coverPath ?? null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -438,7 +439,14 @@ export function ApplicationEditor({
     try {
       const nextResume = resumeFile ? (await uploadDocument(resumeFile)).documentPath : resumePath;
       const nextCover = coverFile ? (await uploadDocument(coverFile)).documentPath : coverPath;
-      const body = { companyName, appliedOn, status, resumePath: nextResume, coverPath: nextCover };
+      const body = {
+        companyName,
+        appliedOn,
+        status,
+        description,
+        resumePath: nextResume,
+        coverPath: nextCover,
+      };
       if (application) {
         await updateApplication(application.id, body);
       } else {
@@ -467,6 +475,7 @@ export function ApplicationEditor({
             ))}
           </select>
         </label>
+        <TextField label="Description" value={description} onChange={setDescription} multiline />
         <label className="field" htmlFor={resumeId}>
           Resume
           <input

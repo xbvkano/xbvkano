@@ -46,6 +46,7 @@ export type JobApplication = {
   companyName: string;
   appliedOn: string;
   status: ApplicationStatus;
+  description: string;
   resumePath: string | null;
   coverPath: string | null;
 };

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { getTokenStatus } from "../api";
 import { useQuery } from "../useQuery";
@@ -21,6 +21,7 @@ import {
   deleteSkill,
   moveEntry,
   openApplicationDocument,
+  type ApplicationStatus,
   type EntryKind,
   type JobApplication,
   type ManagedEntry,
@@ -381,11 +382,86 @@ function errorText(caught: unknown): string {
   return caught instanceof Error ? caught.message : "Could not open the PDF";
 }
 
+function StatusPill({ status }: { status: ApplicationStatus }) {
+  return <span className={`status-pill status-${status}`}>{status}</span>;
+}
+
+function ApplicationView({
+  application,
+  onClose,
+  onEdit,
+  onDelete,
+}: {
+  application: JobApplication;
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+
+  function openDocument(kind: "resume" | "cover") {
+    setError(null);
+    void openApplicationDocument(application.id, kind).catch((caught: unknown) => {
+      setError(errorText(caught));
+    });
+  }
+
+  return (
+    <Modal title={application.companyName}>
+      <div className="application-details">
+        <p>
+          <StatusPill status={application.status} />
+        </p>
+        <p>Applied on {application.appliedOn}</p>
+        <p>{application.description.trim() ? application.description : "No description."}</p>
+        <p>{application.resumePath ? "Resume is on file." : "No resume."}</p>
+        <p>{application.coverPath ? "Cover letter is on file." : "No cover letter."}</p>
+        {error ? <p className="form-error">{error}</p> : null}
+        <div className="application-actions">
+          <button className="button" type="button" onClick={onEdit}>
+            Edit
+          </button>
+          <button className="button" type="button" onClick={onDelete}>
+            Delete
+          </button>
+          {application.resumePath ? (
+            <button className="button" type="button" onClick={() => openDocument("resume")}>
+              View resume
+            </button>
+          ) : null}
+          {application.coverPath ? (
+            <button className="button" type="button" onClick={() => openDocument("cover")}>
+              View cover letter
+            </button>
+          ) : null}
+          <button className="button" type="button" onClick={onClose}>
+            Close
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export function ApplicationsPage() {
   const { applications, reload } = usePortfolio();
+  const [view, setView] = useState<JobApplication | null>(null);
   const [editor, setEditor] = useState<JobApplication | null | undefined>(undefined);
-  const [openError, setOpenError] = useState<string | null>(null);
   const removal = useDelete("application");
+
+  useEffect(() => {
+    if (!view) {
+      return;
+    }
+    const fresh = applications.find((item) => item.id === view.id);
+    if (!fresh) {
+      setView(null);
+      return;
+    }
+    if (fresh !== view) {
+      setView(fresh);
+    }
+  }, [applications, view]);
 
   return (
     <div className="dashboard-panel">
@@ -398,57 +474,38 @@ export function ApplicationsPage() {
           </button>
         }
       />
-      {openError ? <p className="form-error">{openError}</p> : null}
-      <RecordTable
-        rows={applications.map((application) => ({
-          id: application.id,
-          primary: application.companyName,
-          secondary: `${application.appliedOn} · ${application.status}`,
-          extra:
-            application.resumePath || application.coverPath ? (
-              <>
-                {application.resumePath ? (
-                  <button
-                    className="button"
-                    type="button"
-                    onClick={() => {
-                      void openApplicationDocument(application.id, "resume").catch((caught: unknown) => {
-                        setOpenError(errorText(caught));
-                      });
-                    }}
-                  >
-                    Resume
-                  </button>
-                ) : null}
-                {application.coverPath ? (
-                  <button
-                    className="button"
-                    type="button"
-                    onClick={() => {
-                      void openApplicationDocument(application.id, "cover").catch((caught: unknown) => {
-                        setOpenError(errorText(caught));
-                      });
-                    }}
-                  >
-                    Cover page
-                  </button>
-                ) : null}
-              </>
-            ) : undefined,
-        }))}
-        onEdit={(id) => {
-          const application = applications.find((item) => item.id === id);
-          if (application) {
-            setEditor(application);
-          }
-        }}
-        onDelete={(id) => {
-          const application = applications.find((item) => item.id === id);
-          if (application) {
-            removal.ask(application.id, application.companyName);
-          }
-        }}
-      />
+      {applications.length === 0 ? (
+        <p>No records yet.</p>
+      ) : (
+        <table className="record-table">
+          <thead>
+            <tr>
+              <th>Record</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {applications.map((application) => (
+              <tr key={application.id}>
+                <td>
+                  <div>{application.companyName}</div>
+                  <div className="application-summary">
+                    <span>{application.appliedOn}</span>
+                    <StatusPill status={application.status} />
+                  </div>
+                </td>
+                <td>
+                  <div className="row-actions row-actions-single">
+                    <button className="button" type="button" onClick={() => setView(application)}>
+                      View
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
       {editor !== undefined ? (
         <ApplicationEditor
           application={editor}
@@ -457,6 +514,13 @@ export function ApplicationsPage() {
             await reload();
             setEditor(undefined);
           }}
+        />
+      ) : view ? (
+        <ApplicationView
+          application={view}
+          onClose={() => setView(null)}
+          onEdit={() => setEditor(view)}
+          onDelete={() => removal.ask(view.id, view.companyName)}
         />
       ) : null}
       {removal.dialog}

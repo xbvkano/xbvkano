@@ -1,0 +1,12 @@
+---
+description: Never apply Prisma migrations or other database schema changes
+alwaysApply: true
+---
+
+# Do not migrate the database
+
+Never run commands that change the database schema or data. That includes `prisma migrate deploy`, `prisma migrate dev`, `prisma db push`, `prisma db execute`, and `prisma db seed`.
+
+When a schema change is needed, edit `schema.prisma` and add the migration SQL file. Stop there. Tell the user the exact command to run themselves.
+
+`prisma generate` is allowed. It only regenerates the local client.
