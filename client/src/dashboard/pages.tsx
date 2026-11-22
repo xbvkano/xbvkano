@@ -20,6 +20,7 @@ import {
   deleteReference,
   deleteSkill,
   moveEntry,
+  openApplicationDocument,
   type EntryKind,
   type JobApplication,
   type ManagedEntry,
@@ -376,9 +377,14 @@ export function ReferencesPage() {
   );
 }
 
+function errorText(caught: unknown): string {
+  return caught instanceof Error ? caught.message : "Could not open the PDF";
+}
+
 export function ApplicationsPage() {
   const { applications, reload } = usePortfolio();
   const [editor, setEditor] = useState<JobApplication | null | undefined>(undefined);
+  const [openError, setOpenError] = useState<string | null>(null);
   const removal = useDelete("application");
 
   return (
@@ -392,11 +398,43 @@ export function ApplicationsPage() {
           </button>
         }
       />
+      {openError ? <p className="form-error">{openError}</p> : null}
       <RecordTable
         rows={applications.map((application) => ({
           id: application.id,
           primary: application.companyName,
           secondary: `${application.appliedOn} · ${application.status}`,
+          extra:
+            application.resumePath || application.coverPath ? (
+              <>
+                {application.resumePath ? (
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={() => {
+                      void openApplicationDocument(application.id, "resume").catch((caught: unknown) => {
+                        setOpenError(errorText(caught));
+                      });
+                    }}
+                  >
+                    Resume
+                  </button>
+                ) : null}
+                {application.coverPath ? (
+                  <button
+                    className="button"
+                    type="button"
+                    onClick={() => {
+                      void openApplicationDocument(application.id, "cover").catch((caught: unknown) => {
+                        setOpenError(errorText(caught));
+                      });
+                    }}
+                  >
+                    Cover page
+                  </button>
+                ) : null}
+              </>
+            ) : undefined,
         }))}
         onEdit={(id) => {
           const application = applications.find((item) => item.id === id);

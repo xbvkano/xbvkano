@@ -1,4 +1,4 @@
-﻿import { useEffect, useId, useState, type FormEvent } from "react";
+﻿import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 import type { Profile } from "../api";
 import {
   createApplication,
@@ -6,10 +6,12 @@ import {
   createReference,
   createSkill,
   saveProfile,
+  openApplicationDocument,
   updateApplication,
   updateEntry,
   updateReference,
   updateSkill,
+  uploadDocument,
   uploadImage,
   type ApplicationStatus,
   type EntryInput,
@@ -405,16 +407,38 @@ export function ApplicationEditor({
   const [companyName, setCompanyName] = useState(application?.companyName ?? "");
   const [appliedOn, setAppliedOn] = useState(application?.appliedOn ?? "");
   const [status, setStatus] = useState<ApplicationStatus>(application?.status ?? "applied");
+  const [resumePath, setResumePath] = useState<string | null>(application?.resumePath ?? null);
+  const [coverPath, setCoverPath] = useState<string | null>(application?.coverPath ?? null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [resumeInputKey, setResumeInputKey] = useState(0);
+  const [coverInputKey, setCoverInputKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const statusId = useId();
+  const resumeId = useId();
+  const coverId = useId();
+
+  function clearResume() {
+    setResumePath(null);
+    setResumeFile(null);
+    setResumeInputKey((key) => key + 1);
+  }
+
+  function clearCover() {
+    setCoverPath(null);
+    setCoverFile(null);
+    setCoverInputKey((key) => key + 1);
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      const body = { companyName, appliedOn, status };
+      const nextResume = resumeFile ? (await uploadDocument(resumeFile)).documentPath : resumePath;
+      const nextCover = coverFile ? (await uploadDocument(coverFile)).documentPath : coverPath;
+      const body = { companyName, appliedOn, status, resumePath: nextResume, coverPath: nextCover };
       if (application) {
         await updateApplication(application.id, body);
       } else {
@@ -443,6 +467,62 @@ export function ApplicationEditor({
             ))}
           </select>
         </label>
+        <label className="field" htmlFor={resumeId}>
+          Resume
+          <input
+            key={resumeInputKey}
+            id={resumeId}
+            type="file"
+            accept="application/pdf"
+            onChange={(event) => setResumeFile(event.target.files?.[0] ?? null)}
+          />
+        </label>
+        {application && resumePath ? (
+          <div className="row-actions">
+            <button
+              className="button"
+              type="button"
+              onClick={() => {
+                void openApplicationDocument(application.id, "resume").catch((caught: unknown) => {
+                  setError(message(caught));
+                });
+              }}
+            >
+              Open
+            </button>
+            <button className="button" type="button" onClick={clearResume}>
+              Remove
+            </button>
+          </div>
+        ) : null}
+        <label className="field" htmlFor={coverId}>
+          Cover page
+          <input
+            key={coverInputKey}
+            id={coverId}
+            type="file"
+            accept="application/pdf"
+            onChange={(event) => setCoverFile(event.target.files?.[0] ?? null)}
+          />
+        </label>
+        {application && coverPath ? (
+          <div className="row-actions">
+            <button
+              className="button"
+              type="button"
+              onClick={() => {
+                void openApplicationDocument(application.id, "cover").catch((caught: unknown) => {
+                  setError(message(caught));
+                });
+              }}
+            >
+              Open
+            </button>
+            <button className="button" type="button" onClick={clearCover}>
+              Remove
+            </button>
+          </div>
+        ) : null}
         {error ? <p className="form-error">{error}</p> : null}
         <FormActions busy={busy} onClose={onClose} />
       </form>
@@ -457,7 +537,7 @@ export function RecordTable({
   onMove,
   moving,
 }: {
-  rows: { id: number; primary: string; secondary: string }[];
+  rows: { id: number; primary: string; secondary: string; extra?: ReactNode }[];
   onEdit: (id: number) => void;
   onDelete: (id: number) => void;
   onMove?: (id: number, direction: "up" | "down") => void;
@@ -482,7 +562,8 @@ export function RecordTable({
               {row.secondary ? <div>{row.secondary}</div> : null}
             </td>
             <td>
-              <div className="row-actions">
+              <div className={row.extra ? "row-actions row-actions-wide" : "row-actions"}>
+                {row.extra}
                 {onMove ? (
                   <button
                     className="button"

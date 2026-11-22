@@ -9,6 +9,7 @@ import type {
 } from "@prisma/client";
 import { ApiError } from "./api-error.js";
 import { prisma } from "./lib/prisma.js";
+import { deleteStoredPdf, readStoredPdf } from "./media.js";
 
 const entryKinds: EntryKind[] = ["project", "certificate", "experience", "education", "coursework"];
 const applicationStatuses: ApplicationStatus[] = ["applied", "declined", "rejected", "hired"];
@@ -96,6 +97,8 @@ export function formatApplication(application: JobApplication) {
     companyName: application.companyName,
     appliedOn: formatDate(application.appliedOn),
     status: application.status,
+    resumePath: application.resumePath,
+    coverPath: application.coverPath,
   };
 }
 
@@ -454,8 +457,72 @@ function applicationInput(body: unknown) {
   };
 }
 
+function optionalDocumentPath(record: Record<string, unknown>, key: string): string | null | undefined {
+  if (!Object.prototype.hasOwnProperty.call(record, key)) {
+    return undefined;
+  }
+  const value = record[key];
+  if (value === null || value === "") {
+    return null;
+  }
+  if (typeof value !== "string") {
+    throw new ApiError(400, `${key} must be a string`);
+  }
+  const trimmed = value.trim();
+  return trimmed === "" ? null : trimmed;
+}
+
+async function assertStoredPdf(path: string, key: string): Promise<void> {
+  const media = await readStoredPdf(path);
+  if (!media) {
+    throw new ApiError(400, `${key} must be a stored PDF`);
+  }
+}
+
+async function applicationDocuments(
+  existing: { resumePath: string | null; coverPath: string | null } | null,
+  body: unknown,
+) {
+  const record = asRecord(body);
+  const specifiedResume = optionalDocumentPath(record, "resumePath");
+  const specifiedCover = optionalDocumentPath(record, "coverPath");
+  if (typeof specifiedResume === "string") {
+    await assertStoredPdf(specifiedResume, "resumePath");
+  }
+  if (typeof specifiedCover === "string") {
+    await assertStoredPdf(specifiedCover, "coverPath");
+  }
+  const resumePath = specifiedResume === undefined ? (existing?.resumePath ?? null) : specifiedResume;
+  const coverPath = specifiedCover === undefined ? (existing?.coverPath ?? null) : specifiedCover;
+  return { resumePath, coverPath };
+}
+
+async function releaseReplacedPdfs(
+  existing: { resumePath: string | null; coverPath: string | null },
+  documents: { resumePath: string | null; coverPath: string | null },
+) {
+  if (
+    existing.resumePath &&
+    existing.resumePath !== documents.resumePath &&
+    existing.resumePath !== documents.coverPath
+  ) {
+    await deleteStoredPdf(existing.resumePath);
+  }
+  if (
+    existing.coverPath &&
+    existing.coverPath !== existing.resumePath &&
+    existing.coverPath !== documents.resumePath &&
+    existing.coverPath !== documents.coverPath
+  ) {
+    await deleteStoredPdf(existing.coverPath);
+  }
+}
+
 export async function createApplication(body: unknown) {
-  return formatApplication(await prisma.jobApplication.create({ data: applicationInput(body) }));
+  const documents = await applicationDocuments(null, body);
+  return formatApplication(
+    await prisma.jobApplication.create({ data: { ...applicationInput(body), ...documents } }),
+  );
 }
 
 export async function updateApplication(id: number, body: unknown) {
@@ -463,7 +530,13 @@ export async function updateApplication(id: number, body: unknown) {
   if (!existing) {
     throw new ApiError(404, "Not found");
   }
-  return formatApplication(await prisma.jobApplication.update({ where: { id }, data: applicationInput(body) }));
+  const documents = await applicationDocuments(existing, body);
+  const application = await prisma.jobApplication.update({
+    where: { id },
+    data: { ...applicationInput(body), ...documents },
+  });
+  await releaseReplacedPdfs(existing, documents);
+  return formatApplication(application);
 }
 
 export async function deleteApplication(id: number) {
@@ -472,6 +545,26 @@ export async function deleteApplication(id: number) {
     throw new ApiError(404, "Not found");
   }
   await prisma.jobApplication.delete({ where: { id } });
+  await deleteStoredPdf(existing.resumePath);
+  if (existing.coverPath !== existing.resumePath) {
+    await deleteStoredPdf(existing.coverPath);
+  }
+}
+
+export async function loadApplicationDocument(id: number, kind: "resume" | "cover") {
+  const existing = await prisma.jobApplication.findUnique({ where: { id } });
+  if (!existing) {
+    throw new ApiError(404, "Not found");
+  }
+  const path = kind === "resume" ? existing.resumePath : existing.coverPath;
+  if (!path) {
+    throw new ApiError(404, "Not found");
+  }
+  const media = await readStoredPdf(path);
+  if (!media) {
+    throw new ApiError(404, "Not found");
+  }
+  return media;
 }
 
 export async function upsertApplication(body: unknown) {
@@ -480,16 +573,22 @@ export async function upsertApplication(body: unknown) {
     where: { companyName: { equals: input.companyName, mode: "insensitive" } },
     orderBy: [{ appliedOn: "desc" }, { id: "desc" }],
   });
+  const documents = await applicationDocuments(existing, body);
   if (!existing) {
     return {
       created: true,
-      application: formatApplication(await prisma.jobApplication.create({ data: input })),
+      application: formatApplication(
+        await prisma.jobApplication.create({ data: { ...input, ...documents } }),
+      ),
     };
   }
+  const application = await prisma.jobApplication.update({
+    where: { id: existing.id },
+    data: { ...input, ...documents },
+  });
+  await releaseReplacedPdfs(existing, documents);
   return {
     created: false,
-    application: formatApplication(
-      await prisma.jobApplication.update({ where: { id: existing.id }, data: input }),
-    ),
+    application: formatApplication(application),
   };
 }

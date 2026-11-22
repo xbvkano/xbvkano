@@ -46,6 +46,8 @@ export type JobApplication = {
   companyName: string;
   appliedOn: string;
   status: ApplicationStatus;
+  resumePath: string | null;
+  coverPath: string | null;
 };
 
 export type PortfolioDocument = {
@@ -165,6 +167,48 @@ export function updateApplication(id: number, application: Omit<JobApplication, 
 
 export function deleteApplication(id: number) {
   return send<void>(`/api/external/applications/${id}`, "DELETE");
+}
+
+export async function uploadDocument(file: File): Promise<{ documentPath: string }> {
+  const body = new FormData();
+  body.append("file", file);
+  const response = await fetch(serverUrl("/api/external/documents"), withAuth({ method: "POST", body }));
+  if (!response.ok) {
+    const message = await errorMessage(response, "Could not upload PDF");
+    if (isAuthFailure(response.status, message)) {
+      notifyAuthFailure();
+    }
+    throw new Error(message);
+  }
+  return response.json() as Promise<{ documentPath: string }>;
+}
+
+export async function openApplicationDocument(id: number, kind: "resume" | "cover"): Promise<void> {
+  const popup = window.open("about:blank", "_blank");
+  if (popup) {
+    popup.opener = null;
+  }
+  try {
+    const response = await fetch(serverUrl(`/api/external/applications/${id}/${kind}`), withAuth());
+    if (!response.ok) {
+      const message = await errorMessage(response, "Could not open PDF");
+      if (isAuthFailure(response.status, message)) {
+        notifyAuthFailure();
+      }
+      throw new Error(message);
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    if (!popup) {
+      URL.revokeObjectURL(url);
+      throw new Error("Allow pop-ups to open the PDF");
+    }
+    popup.location.href = url;
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (caught) {
+    popup?.close();
+    throw caught;
+  }
 }
 
 export async function uploadImage(file: File): Promise<{ imagePath: string }> {

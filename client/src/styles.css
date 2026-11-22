@@ -309,6 +309,10 @@ li + li {
   justify-content: end;
 }
 
+.row-actions-wide {
+  grid-template-columns: repeat(3, 6.25rem);
+}
+
 .row-actions .button {
   width: 100%;
   min-height: 2.1rem;

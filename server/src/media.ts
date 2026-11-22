@@ -50,3 +50,57 @@ export async function readImage(id: number) {
   }
   return media;
 }
+
+const pdfType = "application/pdf";
+
+export const pdfUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, callback) => {
+    if (file.mimetype !== pdfType) {
+      callback(new ApiError(400, "Upload a PDF"));
+      return;
+    }
+    callback(null, true);
+  },
+});
+
+export async function saveDocument(file: { mimetype: string; buffer: Buffer }): Promise<string> {
+  if (file.mimetype !== pdfType) {
+    throw new ApiError(400, "Upload a PDF");
+  }
+  const media = await prisma.media.create({
+    data: {
+      mimeType: file.mimetype,
+      bytes: Uint8Array.from(file.buffer),
+    },
+  });
+  return `/media/${media.id}`;
+}
+
+export async function readStoredPdf(path: string) {
+  const match = /^\/media\/(\d+)$/.exec(path);
+  if (!match) {
+    return null;
+  }
+  const id = Number(match[1]);
+  if (!Number.isInteger(id) || id < 1) {
+    return null;
+  }
+  const media = await prisma.media.findUnique({ where: { id } });
+  if (!media || media.mimeType !== pdfType) {
+    return null;
+  }
+  return media;
+}
+
+export async function deleteStoredPdf(path: string | null): Promise<void> {
+  if (!path) {
+    return;
+  }
+  const media = await readStoredPdf(path);
+  if (!media) {
+    return;
+  }
+  await prisma.media.delete({ where: { id: media.id } });
+}

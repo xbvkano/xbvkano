@@ -1,4 +1,5 @@
 import { Router } from "express";
+import multer from "multer";
 import { asyncHandler } from "../async-handler.js";
 import { ApiError } from "../api-error.js";
 import {
@@ -10,6 +11,7 @@ import {
   deleteEntry,
   deleteReference,
   deleteSkill,
+  loadApplicationDocument,
   loadApplications,
   loadPortfolio,
   parseId,
@@ -23,7 +25,7 @@ import {
 } from "../content.js";
 import { courseworkCatalog } from "../coursework.js";
 import { loadAssistantNotes, upsertAssistantNote } from "../assistant-notes.js";
-import { mediaUpload, saveImage } from "../media.js";
+import { mediaUpload, pdfUpload, saveDocument, saveImage } from "../media.js";
 import { requireApplyAccess } from "../require-access.js";
 import { requireSession } from "../require-session.js";
 
@@ -154,6 +156,50 @@ manageRouter.get(
     res.json(await loadApplications());
   }),
 );
+
+manageRouter.get(
+  "/applications/:id/resume",
+  requireSession,
+  asyncHandler(async (req, res) => {
+    const media = await loadApplicationDocument(parseId(req.params.id), "resume");
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'inline; filename="resume.pdf"');
+    res.send(Buffer.from(media.bytes));
+  }),
+);
+
+manageRouter.get(
+  "/applications/:id/cover",
+  requireSession,
+  asyncHandler(async (req, res) => {
+    const media = await loadApplicationDocument(parseId(req.params.id), "cover");
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", 'inline; filename="cover-page.pdf"');
+    res.send(Buffer.from(media.bytes));
+  }),
+);
+
+manageRouter.post("/documents", requireApplyAccess, (req, res, next) => {
+  pdfUpload.single("file")(req, res, (error) => {
+    if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
+      next(new ApiError(400, "PDF must be 10 MB or smaller"));
+      return;
+    }
+    if (error) {
+      next(error);
+      return;
+    }
+    if (!req.file) {
+      next(new ApiError(400, "Choose a PDF"));
+      return;
+    }
+    saveDocument(req.file)
+      .then((documentPath) => {
+        res.status(201).json({ documentPath });
+      })
+      .catch(next);
+  });
+});
 
 manageRouter.put(
   "/applications",

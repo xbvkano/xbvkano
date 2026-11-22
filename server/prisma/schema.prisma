@@ -81,6 +81,8 @@ model JobApplication {
   companyName String
   appliedOn   DateTime          @db.Date
   status      ApplicationStatus @default(applied)
+  resumePath  String?
+  coverPath   String?
 }
 
 model Media {

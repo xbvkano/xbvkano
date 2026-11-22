@@ -25,7 +25,7 @@ Start: ${openHour.startsAt}
 End: ${openHour.endsAt}
 Time zone: ${openHour.timeZone}
 
-The window opens at the start time and closes at the end time. Schedule the job for this same window. During the window, omit the Authorization header. You can read the portfolio, create or update job applications, and read or save notes.
+The window opens at the start time and closes at the end time. Schedule the job for this same window. During the window, omit the Authorization header. You can read the portfolio, create or update job applications, upload resume and cover-page PDFs, and read or save notes.
 Outside the window, send the bearer token below.`
     : `Schedule your job
 The daily open-hour window is turned off. There is no token-free time. Send the bearer token on every request.`;
@@ -43,7 +43,7 @@ If a captcha appears at any point, do not attempt it. Leave that application and
 Submit 10 applications a day. A job left because of a captcha does not count toward the 10.
 Read the existing applications first and do not apply again to a company that is already listed.
 
-After each application is submitted, save it with the API. Use the company name, today's date, and status "applied". Use the upsert request below.`;
+After each application is submitted, upload the resume PDF that was sent. Upload the cover-page PDF when that form had a cover letter. Then save the application with the company name, today's date, status "applied", and the documentPath values from those uploads. Use the upsert request below. That upsert keeps one row per company, so the paths replace the files already stored for that company.`;
 
   return `Portfolio API for job applications
 
@@ -56,7 +56,7 @@ ${applyRules}
 Send this header when a token is required:
 Authorization: Bearer ${bearer}
 
-The token lasts 8 hours. It can read the portfolio, list and update job applications, and save application notes. It cannot change the profile, projects, experience, or other dashboard records.
+The token lasts 8 hours. It can read the portfolio, list and update job applications, upload resume and cover-page PDFs, and save application notes. It cannot change the profile, projects, experience, or other dashboard records.
 
 Health check
 1. Server, no token:
@@ -72,17 +72,26 @@ Read the portfolio
 GET ${serverUrl("/api/external/portfolio")}
 This includes profile, experience, education, projects, certificates, skills, coursework, references, and assistantNotes.
 GET ${serverUrl("/api/external/applications")}
+The list includes resumePath and coverPath. It does not include the PDF bytes. documentPath is a stored reference, not a link that opens the file. GET /media/<id> does not serve PDFs.
 GET ${serverUrl("/api/coursework")}
 Coursework is public and does not need a token.
 
+Upload a resume or cover-page PDF
+POST ${serverUrl("/api/external/documents")}
+Content-Type: multipart/form-data
+The field name is file. The file must be application/pdf and 10 MB or smaller.
+{"documentPath":"/media/123"}
+Same auth as the other application calls. Call this once per file. Skip the cover page when the form had no cover letter. documentPath does not open in a browser. Opening a PDF requires a logged-in dashboard.
+
 Update a job application by id
 PUT ${serverUrl("/api/external/applications")}/<id>
-{"companyName":"Example Co","appliedOn":"YYYY-MM-DD","status":"applied"}
+{"companyName":"Example Co","appliedOn":"YYYY-MM-DD","status":"applied","resumePath":"/media/123","coverPath":"/media/456"}
 status is one of: applied, declined, rejected, hired.
+resumePath and coverPath are optional. Each value is a documentPath from the upload call. Omit a path to leave the stored file unchanged. Send null to clear it. A resume-only body is valid. This is the call for attaching files to an application that already exists.
 
 Upsert a job application by company name
 PUT ${serverUrl("/api/external/applications")}
-Same JSON body. If that company already has an application, update it. Otherwise create it.
+Same JSON body. If that company already has an application, update that one row. Otherwise create it. Paths on this call replace the files stored for that company. A second role at the same company does not get its own row.
 
 Application notes
 These notes are not shown on the dashboard. Use them to remember answers that job forms ask for, such as veteran status. Read them before answering. Save a new answer when a new question appears. The same topic updates the previous note.
