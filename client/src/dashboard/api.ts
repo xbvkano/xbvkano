@@ -44,6 +44,7 @@ export type Reference = {
 export type JobApplication = {
   id: number;
   companyName: string;
+  role: string;
   appliedOn: string;
   status: ApplicationStatus;
   description: string;

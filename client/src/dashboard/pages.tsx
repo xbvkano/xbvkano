@@ -412,6 +412,7 @@ function ApplicationView({
         <p>
           <StatusPill status={application.status} />
         </p>
+        <p>{application.role.trim() ? application.role : "No role."}</p>
         <p>Applied on {application.appliedOn}</p>
         <p>{application.description.trim() ? application.description : "No description."}</p>
         <p>{application.resumePath ? "Resume is on file." : "No resume."}</p>
@@ -465,7 +466,8 @@ function orderedApplications(
   const sorted = [...filtered];
   sorted.sort((left, right) => {
     if (order === "az" || order === "za") {
-      const byName = left.companyName.localeCompare(right.companyName);
+      const byName =
+        left.companyName.localeCompare(right.companyName) || left.role.localeCompare(right.role);
       return order === "az" ? byName : -byName;
     }
     const byDate = left.appliedOn.localeCompare(right.appliedOn);
@@ -569,6 +571,7 @@ export function ApplicationsPage() {
                   <tr key={application.id}>
                     <td>
                       <div>{application.companyName}</div>
+                      {application.role.trim() ? <div>{application.role}</div> : null}
                       <div className="application-summary">
                         <span>{application.appliedOn}</span>
                         <StatusPill status={application.status} />

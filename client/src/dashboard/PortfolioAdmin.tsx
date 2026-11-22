@@ -405,6 +405,7 @@ export function ApplicationEditor({
   onSaved: () => Promise<void>;
 }) {
   const [companyName, setCompanyName] = useState(application?.companyName ?? "");
+  const [role, setRole] = useState(application?.role ?? "");
   const [appliedOn, setAppliedOn] = useState(application?.appliedOn ?? "");
   const [status, setStatus] = useState<ApplicationStatus>(application?.status ?? "applied");
   const [description, setDescription] = useState(application?.description ?? "");
@@ -441,6 +442,7 @@ export function ApplicationEditor({
       const nextCover = coverFile ? (await uploadDocument(coverFile)).documentPath : coverPath;
       const body = {
         companyName,
+        role,
         appliedOn,
         status,
         description,
@@ -464,6 +466,7 @@ export function ApplicationEditor({
     <Modal title={application ? "Edit application" : "Add application"}>
       <form className="editor-form" onSubmit={onSubmit}>
         <TextField label="Company" value={companyName} onChange={setCompanyName} />
+        <TextField label="Role" value={role} onChange={setRole} />
         <DateField label="Date applied" value={appliedOn} onChange={setAppliedOn} />
         <label className="field" htmlFor={statusId}>
           Status

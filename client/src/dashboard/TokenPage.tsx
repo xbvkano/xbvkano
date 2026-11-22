@@ -41,9 +41,9 @@ Apply only when every rule below is true:
 
 If a captcha appears at any point, do not attempt it. Leave that application and go to the next job.
 Submit 10 applications a day. A job left because of a captcha does not count toward the 10.
-Read the existing applications first and do not apply again to a company that is already listed.
+Read the existing applications first. Do not apply again to the same role at a company that is already listed. A different role at that company is allowed and must be saved as its own application.
 
-After each application is submitted, upload the resume PDF that was sent. Upload the cover-page PDF when that form had a cover letter. Then save the application with the company name, today's date, status "applied", a short description of the role and what was submitted, and the documentPath values from those uploads. Use the upsert request below. That upsert keeps one row per company, so the paths replace the files already stored for that company. Omit description to leave the stored description unchanged.`;
+After each application is submitted, upload the resume PDF that was sent. Upload the cover-page PDF when that form had a cover letter. Then save the application with the company name, the role title, today's date, status "applied", a short description of the role and what was submitted, and the documentPath values from those uploads. Use the upsert request below. That upsert matches company name and role. The same company and role updates that one row and replaces its files. A different role at the same company creates another row. Omit description to leave the stored description unchanged.`;
 
   return `Portfolio API for job applications
 
@@ -72,7 +72,7 @@ Read the portfolio
 GET ${serverUrl("/api/external/portfolio")}
 This includes profile, experience, education, projects, certificates, skills, coursework, references, and assistantNotes.
 GET ${serverUrl("/api/external/applications")}
-The list includes description, resumePath, and coverPath. It does not include the PDF bytes. documentPath is a stored reference, not a link that opens the file. GET /media/<id> does not serve PDFs.
+The list includes role, description, resumePath, and coverPath. The same company can appear more than once when the roles differ. It does not include the PDF bytes. documentPath is a stored reference, not a link that opens the file. GET /media/<id> does not serve PDFs.
 GET ${serverUrl("/api/coursework")}
 Coursework is public and does not need a token.
 
@@ -85,14 +85,15 @@ Same auth as the other application calls. Call this once per file. Skip the cove
 
 Update a job application by id
 PUT ${serverUrl("/api/external/applications")}/<id>
-{"companyName":"Example Co","appliedOn":"YYYY-MM-DD","status":"applied","description":"Streaming infra role. Resume and cover page were tailored to the posting.","resumePath":"/media/123","coverPath":"/media/456"}
+{"companyName":"Example Co","role":"Streaming Infra","appliedOn":"YYYY-MM-DD","status":"applied","description":"Streaming infra role. Resume and cover page were tailored to the posting.","resumePath":"/media/123","coverPath":"/media/456"}
 status is one of: applied, declined, rejected, hired.
+role is the job title. Send it so a second role at the same company stays a separate application. Omit role on this update to leave the stored role unchanged. Send null or "" to clear it.
 description is optional text shown on the dashboard application view. Omit it to leave the stored description unchanged. Send null or "" to clear it.
-resumePath and coverPath are optional. Each value is a documentPath from the upload call. Omit a path to leave the stored file unchanged. Send null to clear it. A resume-only body is valid. This is the call for attaching files to an application that already exists.
+resumePath and coverPath are optional. Each value is a documentPath from the upload call. Omit a path to leave the stored file unchanged. Send null to clear it. A resume-only body is valid. This is the call for attaching files to one existing application.
 
-Upsert a job application by company name
+Upsert a job application by company name and role
 PUT ${serverUrl("/api/external/applications")}
-Same JSON body. If that company already has an application, update that one row. Otherwise create it. Paths on this call replace the files stored for that company. A second role at the same company does not get its own row.
+Same JSON body. Send role. If that company already has that same role, update that one row. A different role at the same company creates another row. Paths on this call replace the files stored for the matched row only.
 
 Application notes
 These notes are not shown on the dashboard. Use them to remember answers that job forms ask for, such as veteran status. Read them before answering. Save a new answer when a new question appears. The same topic updates the previous note.

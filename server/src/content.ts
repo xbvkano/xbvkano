@@ -95,6 +95,7 @@ export function formatApplication(application: JobApplication) {
   return {
     id: application.id,
     companyName: application.companyName,
+    role: application.role,
     appliedOn: formatDate(application.appliedOn),
     status: application.status,
     description: application.description,
@@ -445,21 +446,21 @@ export async function loadApplications() {
   return applications.map(formatApplication);
 }
 
-function applicationDescription(record: Record<string, unknown>, existing: string): string {
-  if (!Object.prototype.hasOwnProperty.call(record, "description")) {
+function keptText(record: Record<string, unknown>, key: string, existing: string): string {
+  if (!Object.prototype.hasOwnProperty.call(record, key)) {
     return existing;
   }
-  const value = record.description;
+  const value = record[key];
   if (value === null || value === "") {
     return "";
   }
   if (typeof value !== "string") {
-    throw new ApiError(400, "description must be a string");
+    throw new ApiError(400, `${key} must be a string`);
   }
   return value.trim();
 }
 
-function applicationInput(body: unknown, existingDescription = "") {
+function applicationInput(body: unknown, existing?: { description: string; role: string }) {
   const record = asRecord(body);
   const appliedOn = optionalDate(record, "appliedOn");
   if (!appliedOn) {
@@ -467,9 +468,10 @@ function applicationInput(body: unknown, existingDescription = "") {
   }
   return {
     companyName: requiredString(record, "companyName"),
+    role: keptText(record, "role", existing?.role ?? ""),
     appliedOn,
     status: applicationStatus(record.status),
-    description: applicationDescription(record, existingDescription),
+    description: keptText(record, "description", existing?.description ?? ""),
   };
 }
 
@@ -549,7 +551,7 @@ export async function updateApplication(id: number, body: unknown) {
   const documents = await applicationDocuments(existing, body);
   const application = await prisma.jobApplication.update({
     where: { id },
-    data: { ...applicationInput(body, existing.description), ...documents },
+    data: { ...applicationInput(body, existing), ...documents },
   });
   await releaseReplacedPdfs(existing, documents);
   return formatApplication(application);
@@ -586,10 +588,13 @@ export async function loadApplicationDocument(id: number, kind: "resume" | "cove
 export async function upsertApplication(body: unknown) {
   const lookup = applicationInput(body);
   const existing = await prisma.jobApplication.findFirst({
-    where: { companyName: { equals: lookup.companyName, mode: "insensitive" } },
+    where: {
+      companyName: { equals: lookup.companyName, mode: "insensitive" },
+      role: { equals: lookup.role, mode: "insensitive" },
+    },
     orderBy: [{ appliedOn: "desc" }, { id: "desc" }],
   });
-  const input = applicationInput(body, existing?.description ?? "");
+  const input = applicationInput(body, existing ?? undefined);
   const documents = await applicationDocuments(existing, body);
   if (!existing) {
     return {
