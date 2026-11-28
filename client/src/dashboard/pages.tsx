@@ -22,6 +22,7 @@ import {
   moveEntry,
   openApplicationDocument,
   type ApplicationStatus,
+  type InterviewStage,
   type EntryKind,
   type JobApplication,
   type ManagedEntry,
@@ -407,6 +408,22 @@ function StatusPill({ status }: { status: ApplicationStatus }) {
   return <span className={`status-pill status-${status}`}>{status}</span>;
 }
 
+const interviewStageLabels: Record<InterviewStage, string> = {
+  offered: "Interview offered",
+  moved_forward: "Moved forward",
+  completed: "Interview completed",
+};
+
+const interviewStageDetails: Record<InterviewStage, string> = {
+  offered: "Interview offered.",
+  moved_forward: "Moved forward. Waiting on the next level.",
+  completed: "Interview completed. Waiting on a response.",
+};
+
+function InterviewPill({ stage }: { stage: InterviewStage }) {
+  return <span className="status-pill status-interview">{interviewStageLabels[stage]}</span>;
+}
+
 function ApplicationView({
   application,
   onClose,
@@ -433,7 +450,11 @@ function ApplicationView({
         <p>
           <StatusPill status={application.status} />
         </p>
-        <p>{application.interviewOffered ? "Interview offered." : "No interview offered."}</p>
+        <p>
+          {application.interviewStage
+            ? interviewStageDetails[application.interviewStage]
+            : "No interview."}
+        </p>
         <p>{application.role.trim() ? application.role : "No role."}</p>
         <p>Applied on {application.appliedOn}</p>
         <p>{application.description.trim() ? application.description : "No description."}</p>
@@ -492,7 +513,7 @@ function orderedApplications(
     if (status !== "all" && application.status !== status) {
       return false;
     }
-    if (interviewOnly && !application.interviewOffered) {
+    if (interviewOnly && !application.interviewStage) {
       return false;
     }
     if (date && application.appliedOn !== date) {
@@ -545,7 +566,7 @@ function ApplicationCounts({
   };
   for (const application of applications) {
     counts[application.status] += 1;
-    if (application.interviewOffered) {
+    if (application.interviewStage) {
       counts.interview += 1;
     }
   }
@@ -587,7 +608,7 @@ function ApplicationCounts({
         onClick={onInterview}
       >
         <strong>{counts.interview}</strong>
-        <span>Interview offered</span>
+        <span>Interview</span>
       </button>
     </div>
   );
@@ -716,9 +737,7 @@ export function ApplicationsPage() {
                       <div className="application-summary">
                         <span>{application.appliedOn}</span>
                         <StatusPill status={application.status} />
-                        {application.interviewOffered ? (
-                          <span className="status-pill status-interview">Interview offered</span>
-                        ) : null}
+                        {application.interviewStage ? <InterviewPill stage={application.interviewStage} /> : null}
                       </div>
                     </td>
                     <td>

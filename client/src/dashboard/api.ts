@@ -4,6 +4,7 @@ import { serverUrl } from "../serverUrl";
 
 export type EntryKind = "project" | "certificate" | "experience" | "education" | "coursework";
 export type ApplicationStatus = "applied" | "declined" | "rejected" | "hired";
+export type InterviewStage = "offered" | "moved_forward" | "completed";
 
 export type SkillLink = {
   id: number;
@@ -47,7 +48,7 @@ export type JobApplication = {
   role: string;
   appliedOn: string;
   status: ApplicationStatus;
-  interviewOffered: boolean;
+  interviewStage: InterviewStage | null;
   description: string;
   resumePath: string | null;
   coverPath: string | null;

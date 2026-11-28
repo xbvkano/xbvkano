@@ -2,6 +2,7 @@ import type {
   ApplicationStatus,
   Entry,
   EntryKind,
+  InterviewStage,
   JobApplication,
   Profile,
   Reference,
@@ -13,6 +14,8 @@ import { deleteStoredPdf, readStoredPdf } from "./media.js";
 
 const entryKinds: EntryKind[] = ["project", "certificate", "experience", "education", "coursework"];
 const applicationStatuses: ApplicationStatus[] = ["applied", "declined", "rejected", "hired"];
+const interviewStages: InterviewStage[] = ["offered", "moved_forward", "completed"];
+const terminalStatuses: ApplicationStatus[] = ["declined", "rejected", "hired"];
 
 type EntryWithSkills = Entry & { skills: { skill: Skill }[] };
 
@@ -98,7 +101,7 @@ export function formatApplication(application: JobApplication) {
     role: application.role,
     appliedOn: formatDate(application.appliedOn),
     status: application.status,
-    interviewOffered: application.interviewOffered,
+    interviewStage: application.interviewStage,
     description: application.description,
     resumePath: application.resumePath,
     coverPath: application.coverPath,
@@ -170,6 +173,33 @@ function applicationStatus(value: unknown): ApplicationStatus {
     throw new ApiError(400, "status is invalid");
   }
   return value as ApplicationStatus;
+}
+
+function interviewStageValue(value: unknown): InterviewStage | null {
+  if (value === null) {
+    return null;
+  }
+  if (typeof value !== "string" || !interviewStages.includes(value as InterviewStage)) {
+    throw new ApiError(400, "interviewStage is invalid");
+  }
+  return value as InterviewStage;
+}
+
+function keptInterviewStage(
+  record: Record<string, unknown>,
+  existing: InterviewStage | null,
+): InterviewStage | null {
+  if (Object.prototype.hasOwnProperty.call(record, "interviewStage")) {
+    return interviewStageValue(record.interviewStage);
+  }
+  if (Object.prototype.hasOwnProperty.call(record, "interviewOffered")) {
+    const offered = record.interviewOffered;
+    if (typeof offered !== "boolean") {
+      throw new ApiError(400, "interviewOffered must be a boolean");
+    }
+    return offered ? "offered" : null;
+  }
+  return existing;
 }
 
 export function parseId(value: string | undefined): number {
@@ -471,32 +501,24 @@ function keptText(record: Record<string, unknown>, key: string, existing: string
   return value.trim();
 }
 
-function keptBoolean(record: Record<string, unknown>, key: string, existing: boolean): boolean {
-  if (!Object.prototype.hasOwnProperty.call(record, key)) {
-    return existing;
-  }
-  const value = record[key];
-  if (typeof value !== "boolean") {
-    throw new ApiError(400, `${key} must be a boolean`);
-  }
-  return value;
-}
-
 function applicationInput(
   body: unknown,
-  existing?: { description: string; role: string; interviewOffered: boolean },
+  existing?: { description: string; role: string; interviewStage: InterviewStage | null },
 ) {
   const record = asRecord(body);
   const appliedOn = optionalDate(record, "appliedOn");
   if (!appliedOn) {
     throw new ApiError(400, "appliedOn is required");
   }
+  const status = applicationStatus(record.status);
   return {
     companyName: requiredString(record, "companyName"),
     role: keptText(record, "role", existing?.role ?? ""),
     appliedOn,
-    status: applicationStatus(record.status),
-    interviewOffered: keptBoolean(record, "interviewOffered", existing?.interviewOffered ?? false),
+    status,
+    interviewStage: terminalStatuses.includes(status)
+      ? null
+      : keptInterviewStage(record, existing?.interviewStage ?? null),
     description: keptText(record, "description", existing?.description ?? ""),
   };
 }

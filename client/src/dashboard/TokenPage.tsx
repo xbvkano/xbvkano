@@ -43,7 +43,7 @@ If a captcha appears at any point, do not attempt it. Leave that application and
 Submit 10 applications a day. A job left because of a captcha does not count toward the 10.
 Read the existing applications first. Do not apply again to the same role at a company that is already listed. A different role at that company is allowed and must be saved as its own application.
 
-After each application is submitted, upload the resume PDF that was sent. Upload the cover-page PDF when that form had a cover letter. Then save the application with the company name, the role title, today's date, status "applied", interviewOffered false, a short description of the role and what was submitted, and the documentPath values from those uploads. Use the upsert request below. That upsert matches company name and role. The same company and role updates that one row and replaces its files. A different role at the same company creates another row. Omit description to leave the stored description unchanged. Omit interviewOffered to leave the stored value unchanged. When a company later offers an interview, update that application and set interviewOffered to true.`;
+After each application is submitted, upload the resume PDF that was sent. Upload the cover-page PDF when that form had a cover letter. Then save the application with the company name, the role title, today's date, status "applied", interviewStage null, a short description of the role and what was submitted, and the documentPath values from those uploads. Use the upsert request below. That upsert matches company name and role. The same company and role updates that one row and replaces its files. A different role at the same company creates another row. Omit description to leave the stored description unchanged. Omit interviewStage to leave the stored stage unchanged. When a company later offers an interview, update that application and set interviewStage to "offered". Use "moved_forward" after the candidate advances to another level and is waiting on it. Use "completed" after the interviews are done and the candidate is waiting on a response. Setting status to "declined", "rejected", or "hired" removes the interview stage.`;
 
   return `Portfolio API for job applications
 
@@ -72,7 +72,7 @@ Read the portfolio
 GET ${serverUrl("/api/external/portfolio")}
 This includes profile, experience, education, projects, certificates, skills, coursework, references, and assistantNotes.
 GET ${serverUrl("/api/external/applications")}
-The list includes role, description, interviewOffered, resumePath, and coverPath. The same company can appear more than once when the roles differ. It does not include the PDF bytes. documentPath is a stored reference, not a link that opens the file. GET /media/<id> does not serve PDFs.
+The list includes role, description, interviewStage, resumePath, and coverPath. The same company can appear more than once when the roles differ. It does not include the PDF bytes. documentPath is a stored reference, not a link that opens the file. GET /media/<id> does not serve PDFs.
 
 Search applications by name
 GET ${serverUrl("/api/external/applications")}?name=Example
@@ -89,9 +89,9 @@ Same auth as the other application calls. Call this once per file. Skip the cove
 
 Update a job application by id
 PUT ${serverUrl("/api/external/applications")}/<id>
-{"companyName":"Example Co","role":"Streaming Infra","appliedOn":"YYYY-MM-DD","status":"applied","interviewOffered":false,"description":"Streaming infra role. Resume and cover page were tailored to the posting.","resumePath":"/media/123","coverPath":"/media/456"}
+{"companyName":"Example Co","role":"Streaming Infra","appliedOn":"YYYY-MM-DD","status":"applied","interviewStage":null,"description":"Streaming infra role. Resume and cover page were tailored to the posting.","resumePath":"/media/123","coverPath":"/media/456"}
 status is one of: applied, declined, rejected, hired.
-interviewOffered is true when the company offered an interview, and false otherwise. Omit it to leave the stored value unchanged. A new application is false when the field is omitted.
+interviewStage is "offered", "moved_forward", "completed", or null. "offered" means an interview was offered. "moved_forward" means the candidate advanced to another level and is waiting on it. "completed" means the interviews are done and the candidate is waiting on a response. Omit interviewStage to leave the stored stage unchanged. A new application is null when the field is omitted. Setting status to "declined", "rejected", or "hired" removes the interview stage even if interviewStage is sent.
 role is the job title. Send it so a second role at the same company stays a separate application. Omit role on this update to leave the stored role unchanged. Send null or "" to clear it.
 description is optional text shown on the dashboard application view. Omit it to leave the stored description unchanged. Send null or "" to clear it.
 resumePath and coverPath are optional. Each value is a documentPath from the upload call. Omit a path to leave the stored file unchanged. Send null to clear it. A resume-only body is valid. This is the call for attaching files to one existing application.

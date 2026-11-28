@@ -14,6 +14,7 @@ import {
   uploadDocument,
   uploadImage,
   type ApplicationStatus,
+  type InterviewStage,
   type EntryInput,
   type EntryKind,
   type JobApplication,
@@ -408,7 +409,9 @@ export function ApplicationEditor({
   const [role, setRole] = useState(application?.role ?? "");
   const [appliedOn, setAppliedOn] = useState(application?.appliedOn ?? "");
   const [status, setStatus] = useState<ApplicationStatus>(application?.status ?? "applied");
-  const [interviewOffered, setInterviewOffered] = useState(application?.interviewOffered ?? false);
+  const [interviewStage, setInterviewStage] = useState<InterviewStage | null>(
+    application?.status === "applied" ? (application.interviewStage ?? null) : null,
+  );
   const [description, setDescription] = useState(application?.description ?? "");
   const [resumePath, setResumePath] = useState<string | null>(application?.resumePath ?? null);
   const [coverPath, setCoverPath] = useState<string | null>(application?.coverPath ?? null);
@@ -419,6 +422,7 @@ export function ApplicationEditor({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const statusId = useId();
+  const interviewId = useId();
   const resumeId = useId();
   const coverId = useId();
 
@@ -446,7 +450,7 @@ export function ApplicationEditor({
         role,
         appliedOn,
         status,
-        interviewOffered,
+        interviewStage: status === "applied" ? interviewStage : null,
         description,
         resumePath: nextResume,
         coverPath: nextCover,
@@ -472,7 +476,17 @@ export function ApplicationEditor({
         <DateField label="Date applied" value={appliedOn} onChange={setAppliedOn} />
         <label className="field" htmlFor={statusId}>
           Status
-          <select id={statusId} value={status} onChange={(event) => setStatus(event.target.value as ApplicationStatus)}>
+          <select
+            id={statusId}
+            value={status}
+            onChange={(event) => {
+              const next = event.target.value as ApplicationStatus;
+              setStatus(next);
+              if (next !== "applied") {
+                setInterviewStage(null);
+              }
+            }}
+          >
             {statuses.map((option) => (
               <option key={option} value={option}>
                 {option}
@@ -480,13 +494,22 @@ export function ApplicationEditor({
             ))}
           </select>
         </label>
-        <label className="schedule-toggle">
-          <input
-            type="checkbox"
-            checked={interviewOffered}
-            onChange={(event) => setInterviewOffered(event.target.checked)}
-          />
-          Interview offered
+        <label className="field" htmlFor={interviewId}>
+          Interview
+          <select
+            id={interviewId}
+            value={interviewStage ?? ""}
+            disabled={status !== "applied"}
+            onChange={(event) => {
+              const value = event.target.value;
+              setInterviewStage(value === "" ? null : (value as InterviewStage));
+            }}
+          >
+            <option value="">No interview</option>
+            <option value="offered">Interview offered</option>
+            <option value="moved_forward">Moved forward</option>
+            <option value="completed">Interview completed</option>
+          </select>
         </label>
         <TextField label="Description" value={description} onChange={setDescription} multiline />
         <label className="field" htmlFor={resumeId}>
