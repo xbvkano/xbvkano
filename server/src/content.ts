@@ -98,6 +98,7 @@ export function formatApplication(application: JobApplication) {
     role: application.role,
     appliedOn: formatDate(application.appliedOn),
     status: application.status,
+    interviewOffered: application.interviewOffered,
     description: application.description,
     resumePath: application.resumePath,
     coverPath: application.coverPath,
@@ -439,8 +440,18 @@ export async function deleteReference(id: number) {
   await prisma.reference.delete({ where: { id } });
 }
 
-export async function loadApplications() {
+export async function loadApplications(name?: string) {
+  const query = name?.trim() ?? "";
   const applications = await prisma.jobApplication.findMany({
+    where:
+      query === ""
+        ? undefined
+        : {
+            OR: [
+              { companyName: { contains: query, mode: "insensitive" } },
+              { role: { contains: query, mode: "insensitive" } },
+            ],
+          },
     orderBy: [{ appliedOn: "desc" }, { id: "desc" }],
   });
   return applications.map(formatApplication);
@@ -460,7 +471,21 @@ function keptText(record: Record<string, unknown>, key: string, existing: string
   return value.trim();
 }
 
-function applicationInput(body: unknown, existing?: { description: string; role: string }) {
+function keptBoolean(record: Record<string, unknown>, key: string, existing: boolean): boolean {
+  if (!Object.prototype.hasOwnProperty.call(record, key)) {
+    return existing;
+  }
+  const value = record[key];
+  if (typeof value !== "boolean") {
+    throw new ApiError(400, `${key} must be a boolean`);
+  }
+  return value;
+}
+
+function applicationInput(
+  body: unknown,
+  existing?: { description: string; role: string; interviewOffered: boolean },
+) {
   const record = asRecord(body);
   const appliedOn = optionalDate(record, "appliedOn");
   if (!appliedOn) {
@@ -471,6 +496,7 @@ function applicationInput(body: unknown, existing?: { description: string; role:
     role: keptText(record, "role", existing?.role ?? ""),
     appliedOn,
     status: applicationStatus(record.status),
+    interviewOffered: keptBoolean(record, "interviewOffered", existing?.interviewOffered ?? false),
     description: keptText(record, "description", existing?.description ?? ""),
   };
 }

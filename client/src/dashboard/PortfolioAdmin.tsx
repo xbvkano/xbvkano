@@ -408,6 +408,7 @@ export function ApplicationEditor({
   const [role, setRole] = useState(application?.role ?? "");
   const [appliedOn, setAppliedOn] = useState(application?.appliedOn ?? "");
   const [status, setStatus] = useState<ApplicationStatus>(application?.status ?? "applied");
+  const [interviewOffered, setInterviewOffered] = useState(application?.interviewOffered ?? false);
   const [description, setDescription] = useState(application?.description ?? "");
   const [resumePath, setResumePath] = useState<string | null>(application?.resumePath ?? null);
   const [coverPath, setCoverPath] = useState<string | null>(application?.coverPath ?? null);
@@ -445,6 +446,7 @@ export function ApplicationEditor({
         role,
         appliedOn,
         status,
+        interviewOffered,
         description,
         resumePath: nextResume,
         coverPath: nextCover,
@@ -477,6 +479,14 @@ export function ApplicationEditor({
               </option>
             ))}
           </select>
+        </label>
+        <label className="schedule-toggle">
+          <input
+            type="checkbox"
+            checked={interviewOffered}
+            onChange={(event) => setInterviewOffered(event.target.checked)}
+          />
+          Interview offered
         </label>
         <TextField label="Description" value={description} onChange={setDescription} multiline />
         <label className="field" htmlFor={resumeId}>

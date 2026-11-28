@@ -355,6 +355,72 @@ li + li {
   color: #166534;
 }
 
+.status-interview {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.application-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.75rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.application-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid #e4e0d8;
+  border-radius: 0.65rem;
+  background: #faf9f7;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.application-stat strong {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.application-stat span {
+  color: #5c574e;
+}
+
+.application-stat[aria-pressed="true"] {
+  border-color: #1a1a1a;
+  background: #fff;
+}
+
+.application-stat.status-applied[aria-pressed="true"] {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.application-stat.status-declined[aria-pressed="true"] {
+  background: #fef3c7;
+  border-color: #fcd34d;
+}
+
+.application-stat.status-rejected[aria-pressed="true"] {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.application-stat.status-hired[aria-pressed="true"] {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.application-stat.status-interview[aria-pressed="true"] {
+  background: #ede9fe;
+  border-color: #c4b5fd;
+}
+
 .application-details {
   display: flex;
   flex-direction: column;
@@ -402,6 +468,15 @@ li + li {
 .application-filters input {
   font: inherit;
   padding: 0.4rem 0.5rem;
+}
+
+.application-filters .name-filter {
+  flex: 1 1 14rem;
+  min-width: 12rem;
+}
+
+.application-filters .name-filter input {
+  width: 100%;
 }
 
 .row-actions .view-button.status-applied {

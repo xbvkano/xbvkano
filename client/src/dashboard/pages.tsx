@@ -412,6 +412,7 @@ function ApplicationView({
         <p>
           <StatusPill status={application.status} />
         </p>
+        <p>{application.interviewOffered ? "Interview offered." : "No interview offered."}</p>
         <p>{application.role.trim() ? application.role : "No role."}</p>
         <p>Applied on {application.appliedOn}</p>
         <p>{application.description.trim() ? application.description : "No description."}</p>
@@ -448,20 +449,35 @@ const applicationStatuses: ApplicationStatus[] = ["applied", "declined", "reject
 
 type ApplicationOrder = "newest" | "oldest" | "az" | "za";
 
+function matchesName(application: JobApplication, name: string) {
+  const query = name.trim().toLowerCase();
+  if (!query) {
+    return true;
+  }
+  return (
+    application.companyName.toLowerCase().includes(query) || application.role.toLowerCase().includes(query)
+  );
+}
+
 function orderedApplications(
   applications: JobApplication[],
   status: ApplicationStatus | "all",
   date: string,
+  name: string,
+  interviewOnly: boolean,
   order: ApplicationOrder,
 ) {
   const filtered = applications.filter((application) => {
     if (status !== "all" && application.status !== status) {
       return false;
     }
+    if (interviewOnly && !application.interviewOffered) {
+      return false;
+    }
     if (date && application.appliedOn !== date) {
       return false;
     }
-    return true;
+    return matchesName(application, name);
   });
   const sorted = [...filtered];
   sorted.sort((left, right) => {
@@ -479,18 +495,105 @@ function orderedApplications(
   return sorted;
 }
 
+const statusLabels: Record<ApplicationStatus, string> = {
+  applied: "Applied",
+  declined: "Declined",
+  rejected: "Rejected",
+  hired: "Hired",
+};
+
+function ApplicationCounts({
+  applications,
+  status,
+  interviewOnly,
+  onStatus,
+  onInterview,
+}: {
+  applications: JobApplication[];
+  status: ApplicationStatus | "all";
+  interviewOnly: boolean;
+  onStatus: (status: ApplicationStatus | "all") => void;
+  onInterview: () => void;
+}) {
+  const counts: Record<ApplicationStatus | "interview", number> = {
+    applied: 0,
+    declined: 0,
+    rejected: 0,
+    hired: 0,
+    interview: 0,
+  };
+  for (const application of applications) {
+    counts[application.status] += 1;
+    if (application.interviewOffered) {
+      counts.interview += 1;
+    }
+  }
+
+  return (
+    <div className="application-stats">
+      <button
+        className="application-stat"
+        type="button"
+        aria-pressed={status === "all" && !interviewOnly}
+        onClick={() => {
+          if (status !== "all") {
+            onStatus("all");
+          }
+          if (interviewOnly) {
+            onInterview();
+          }
+        }}
+      >
+        <strong>{applications.length}</strong>
+        <span>All</span>
+      </button>
+      {applicationStatuses.map((item) => (
+        <button
+          key={item}
+          className={`application-stat status-${item}`}
+          type="button"
+          aria-pressed={status === item}
+          onClick={() => onStatus(status === item ? "all" : item)}
+        >
+          <strong>{counts[item]}</strong>
+          <span>{statusLabels[item]}</span>
+        </button>
+      ))}
+      <button
+        className="application-stat status-interview"
+        type="button"
+        aria-pressed={interviewOnly}
+        onClick={onInterview}
+      >
+        <strong>{counts.interview}</strong>
+        <span>Interview offered</span>
+      </button>
+    </div>
+  );
+}
+
 export function ApplicationsPage() {
   const { applications, reload } = usePortfolio();
   const [view, setView] = useState<JobApplication | null>(null);
   const [editor, setEditor] = useState<JobApplication | null | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "all">("all");
   const [dateFilter, setDateFilter] = useState("");
+  const [nameFilter, setNameFilter] = useState("");
+  const [interviewOnly, setInterviewOnly] = useState(false);
   const [order, setOrder] = useState<ApplicationOrder>("newest");
   const statusFilterId = useId();
   const dateFilterId = useId();
+  const nameFilterId = useId();
   const orderId = useId();
   const removal = useDelete("application");
-  const visible = orderedApplications(applications, statusFilter, dateFilter, order);
+  const visible = orderedApplications(
+    applications,
+    statusFilter,
+    dateFilter,
+    nameFilter,
+    interviewOnly,
+    order,
+  );
 
   useEffect(() => {
     if (!view) {
@@ -517,11 +620,28 @@ export function ApplicationsPage() {
           </button>
         }
       />
+      <ApplicationCounts
+        applications={applications}
+        status={statusFilter}
+        interviewOnly={interviewOnly}
+        onStatus={setStatusFilter}
+        onInterview={() => setInterviewOnly((current) => !current)}
+      />
       {applications.length === 0 ? (
         <p>No records yet.</p>
       ) : (
         <>
           <div className="application-filters">
+            <label className="name-filter" htmlFor={nameFilterId}>
+              Name
+              <input
+                id={nameFilterId}
+                type="search"
+                value={nameFilter}
+                placeholder="Company or role"
+                onChange={(event) => setNameFilter(event.target.value)}
+              />
+            </label>
             <label htmlFor={statusFilterId}>
               Status
               <select
@@ -575,6 +695,9 @@ export function ApplicationsPage() {
                       <div className="application-summary">
                         <span>{application.appliedOn}</span>
                         <StatusPill status={application.status} />
+                        {application.interviewOffered ? (
+                          <span className="status-pill status-interview">Interview offered</span>
+                        ) : null}
                       </div>
                     </td>
                     <td>

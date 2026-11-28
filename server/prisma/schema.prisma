@@ -77,14 +77,15 @@ enum ApplicationStatus {
 }
 
 model JobApplication {
-  id          Int               @id @default(autoincrement())
-  companyName String
-  role        String            @default("")
-  appliedOn   DateTime          @db.Date
-  status      ApplicationStatus @default(applied)
-  description String            @default("")
-  resumePath  String?
-  coverPath   String?
+  id               Int               @id @default(autoincrement())
+  companyName      String
+  role             String            @default("")
+  appliedOn        DateTime          @db.Date
+  status           ApplicationStatus @default(applied)
+  interviewOffered Boolean           @default(false)
+  description      String            @default("")
+  resumePath       String?
+  coverPath        String?
 }
 
 model Media {

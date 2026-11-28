@@ -152,8 +152,12 @@ manageRouter.get(
 manageRouter.get(
   "/applications",
   requireApplyAccess,
-  asyncHandler(async (_req, res) => {
-    res.json(await loadApplications());
+  asyncHandler(async (req, res) => {
+    const name = req.query.name;
+    if (Array.isArray(name) || (name !== undefined && typeof name !== "string")) {
+      throw new ApiError(400, "name must be a string");
+    }
+    res.json(await loadApplications(name));
   }),
 );
 
