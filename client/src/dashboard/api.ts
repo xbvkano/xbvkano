@@ -53,11 +53,26 @@ export type JobApplication = {
   coverPath: string | null;
 };
 
+export type CatalogCourse = {
+  id: number;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  shortDescription: string;
+  shortName: string;
+  fullName: string;
+  description: string;
+  school: string;
+  term: string;
+  sortOrder: number;
+};
+
 export type PortfolioDocument = {
   profile: Profile;
   entries: Record<EntryKind, ManagedEntry[]>;
   skills: Skill[];
   references: Reference[];
+  coursework: CatalogCourse[];
 };
 
 export type EntryInput = {

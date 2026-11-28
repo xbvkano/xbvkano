@@ -123,7 +123,7 @@ const entryDescriptions: Record<EntryKind, string> = {
   certificate: "Certificates and credentials.",
   experience: "Roles and internships. Leave the end date empty if the role is current.",
   education: "Schools and degrees.",
-  coursework: "Courses, abbreviations, and dates.",
+  coursework: "Transcript courses, with the most relevant software engineering coursework first.",
 };
 
 export function DashboardHome() {
@@ -135,7 +135,10 @@ export function DashboardHome() {
     ...entryKinds.map((section) => ({
       to: entryPaths[section.kind],
       label: section.heading,
-      count: portfolio.entries[section.kind].length,
+      count:
+        section.kind === "coursework"
+          ? portfolio.coursework.length + portfolio.entries.coursework.length
+          : portfolio.entries[section.kind].length,
     })),
     { to: "/dashboard/skills", label: "Skills", count: portfolio.skills.length },
     { to: "/dashboard/references", label: "References", count: portfolio.references.length },
@@ -217,6 +220,7 @@ export function EntryPage({ kind }: { kind: EntryKind }) {
     return null;
   }
   const entries = portfolio.entries[kind];
+  const catalog = kind === "coursework" ? portfolio.coursework : [];
 
   return (
     <div className="dashboard-panel">
@@ -229,36 +233,53 @@ export function EntryPage({ kind }: { kind: EntryKind }) {
           </button>
         }
       />
-      <RecordTable
-        rows={entries.map((entry) => ({
-          id: entry.id,
-          primary: entry.title,
-          secondary: entrySecondary(entry),
-        }))}
-        onEdit={(id) => {
-          const entry = entries.find((item) => item.id === id);
-          if (entry) {
-            setEditor(entry);
-          }
-        }}
-        onDelete={(id) => {
-          const entry = entries.find((item) => item.id === id);
-          if (entry) {
-            removal.ask(entry.id, entry.title);
-          }
-        }}
-        moving={moving}
-        onMove={(id, direction) => {
-          setMoving(true);
-          setMoveError("");
-          void moveEntry(id, direction)
-            .then(() => reload())
-            .catch((error: unknown) => {
-              setMoveError(error instanceof Error ? error.message : "Could not reorder");
-            })
-            .finally(() => setMoving(false));
-        }}
-      />
+      {catalog.length > 0 ? (
+        <ol className="course-list">
+          {catalog.map((course) => (
+            <li key={course.slug}>
+              <h2>
+                <span className="course-code">{course.shortName}</span> {course.fullName}
+              </h2>
+              <p className="course-meta">
+                {course.term} · {course.school}
+              </p>
+              <p>{course.description}</p>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {kind === "coursework" && entries.length === 0 ? null : (
+        <RecordTable
+          rows={entries.map((entry) => ({
+            id: entry.id,
+            primary: entry.title,
+            secondary: entrySecondary(entry),
+          }))}
+          onEdit={(id) => {
+            const entry = entries.find((item) => item.id === id);
+            if (entry) {
+              setEditor(entry);
+            }
+          }}
+          onDelete={(id) => {
+            const entry = entries.find((item) => item.id === id);
+            if (entry) {
+              removal.ask(entry.id, entry.title);
+            }
+          }}
+          moving={moving}
+          onMove={(id, direction) => {
+            setMoving(true);
+            setMoveError("");
+            void moveEntry(id, direction)
+              .then(() => reload())
+              .catch((error: unknown) => {
+                setMoveError(error instanceof Error ? error.message : "Could not reorder");
+              })
+              .finally(() => setMoving(false));
+          }}
+        />
+      )}
       {moveError ? <p className="form-error">{moveError}</p> : null}
       {editor !== undefined ? (
         <EntryEditor

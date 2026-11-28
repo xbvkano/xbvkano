@@ -72,9 +72,76 @@ function slugFor(course: Course): string {
     .replace(/^-|-$/g, "");
 }
 
+const softwareEngineeringOrder = [
+  "CS 302|Fall 2023",
+  "CS 477|Fall 2025",
+  "CS 370|Summer 2024",
+  "CS 218|Fall 2023",
+  "CS 219|Spring 2024",
+  "CS 472|Spring 2026",
+  "CS 442|Spring 2026",
+  "CS 326|Fall 2024",
+  "CS 460|Spring 2025",
+  "CS 202|Spring 2023",
+  "CS 135|Fall 2022",
+  "MATH 251|Fall 2022",
+  "CS 456|Fall 2024",
+  "MATH 365|Summer 2024",
+  "CPE 100|Spring 2023",
+  "CS 405|Spring 2025",
+  "CS 440|Fall 2025",
+  "STAT 411|Fall 2023",
+  "STAT 412|Spring 2024",
+  "PHIL 114|Summer 2024",
+  "ENG 407B|Fall 2023",
+  "CS 301|Spring 2024",
+  "EE 220|Spring 2023",
+  "CS 490|Fall 2025",
+  "CS 490|Summer 2025",
+  "CS 789|Spring 2025",
+  "MATH 181|Fall 2021",
+  "MATH 182|Spring 2022",
+  "MATH 283|Spring 2024",
+  "MATH 283|Summer 2024",
+  "PHYS 180|Spring 2023",
+  "PHYS 180L|Spring 2023",
+  "MATH 303|Spring 2024",
+  "MATH 453|Fall 2024",
+  "MATH 454|Spring 2025",
+  "MATH 457|Fall 2024",
+  "MATH 427|Summer 2025",
+  "PHIL 422|Summer 2025",
+  "MATH 480|Fall 2025",
+  "EE 220D|Spring 2023",
+  "PHYS 151|Fall 2022",
+  "ENG 100|Fall 2021",
+  "COM 101|Summer 2022",
+  "ENG 231|Summer 2022",
+  "HIST 101|Fall 2021",
+  "PSC 101|Spring 2022",
+  "PSY 101|Summer 2022",
+  "SOC 101|Spring 2023",
+  "SPAN 111|Spring 2022",
+  "BIOL 190|Spring 2022",
+  "BIOL 191|Fall 2022",
+  "CHEM 121|Fall 2022",
+];
+
+function softwareEngineeringRank(course: Course): number {
+  const rank = softwareEngineeringOrder.indexOf(`${course.shortName}|${course.term}`);
+  return rank === -1 ? softwareEngineeringOrder.length : rank;
+}
+
 export function courseworkCatalog() {
-  return courses.map((course, index) => ({
-    id: 1_000_000 + index,
+  const ranked = courses
+    .map((course, sourceIndex) => ({ course, sourceIndex }))
+    .sort(
+      (left, right) =>
+        softwareEngineeringRank(left.course) - softwareEngineeringRank(right.course) ||
+        left.sourceIndex - right.sourceIndex,
+    );
+  return ranked.map(({ course, sourceIndex }, index) => ({
+    id: 1_000_000 + sourceIndex,
     kind: "coursework" as const,
     slug: slugFor(course),
     title: course.fullName,
@@ -86,7 +153,7 @@ export function courseworkCatalog() {
     startedOn: null,
     endedOn: null,
     sortOrder: index,
-    skills: [],
+    skills: [] as [],
     shortName: course.shortName,
     fullName: course.fullName,
     description: course.description,
